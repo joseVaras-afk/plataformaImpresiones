@@ -25,7 +25,7 @@ public class FuncionarioServiceImpl implements FuncionarioService {
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminar(int id) {
         funcionarioRepository.deleteById(id);
     }
 }

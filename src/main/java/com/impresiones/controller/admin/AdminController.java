@@ -47,7 +47,7 @@ public class AdminController {
     }
 
     @GetMapping("/funcionarios/eliminar/{id}")
-    public String eliminarFuncionario(@PathVariable("id") Long id) {
+    public String eliminarFuncionario(@PathVariable("id") int id) {
         funcionarioService.eliminar(id);
         return "redirect:/admin/funcionarios";
     }
@@ -61,7 +61,7 @@ public class AdminController {
     }
 
     @GetMapping("/solicitudes/editar/{id}")
-    public String editarSolicitud(@PathVariable("id") Long id, Model model) {
+    public String editarSolicitud(@PathVariable("id") int id, Model model) {
         SolicitudImpresion solicitud = solicitudService.obtenerPorId(id);
         model.addAttribute("solicitud", solicitud);
         return "admin/form_solicitud";
@@ -71,5 +71,10 @@ public class AdminController {
     public String actualizarSolicitud(@ModelAttribute SolicitudImpresion solicitud) {
         solicitudService.actualizarSolicitud(solicitud);
         return "redirect:/admin/solicitudes";
+    }
+    
+    @GetMapping("/admin")
+    public String adminHome() {
+        return "admin/index"; // vista del panel admin
     }
 }

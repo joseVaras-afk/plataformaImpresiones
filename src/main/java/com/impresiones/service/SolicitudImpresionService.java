@@ -6,9 +6,11 @@ import com.impresiones.repository.SolicitudImpresionRepository;
 import com.impresiones.repository.FuncionarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.impresiones.entity.SolicitudImpresion;
 
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 public class SolicitudImpresionService {
@@ -72,4 +74,22 @@ public class SolicitudImpresionService {
         }
         return false;
     }
+
+    // ✅ Nuevo método: listar todas las solicitudes
+    public List<SolicitudImpresion> obtenerTodasLasSolicitudes() {
+        return solicitudRepository.findAll();
+    }
+
+    // ✅ Nuevo método: obtener solicitud por ID
+    public SolicitudImpresion obtenerPorId(int id) {
+        return solicitudRepository.findById(id).orElse(null);
+    }
+
+    // ✅ Nuevo método: actualizar una solicitud existente
+    public void actualizarSolicitud(SolicitudImpresion solicitud) {
+        solicitudRepository.save(solicitud);
+    }
+    
+
+
 }

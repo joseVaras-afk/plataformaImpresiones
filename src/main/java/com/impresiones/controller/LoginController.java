@@ -11,8 +11,8 @@ public class LoginController {
         return "login"; // archivo login.html en templates
     }
 
-    @GetMapping("/inicio")
+    @GetMapping("/admin/index")
     public String mostrarInicio() {
-        return "inicio"; // página principal tras iniciar sesión
+        return "index"; // página principal tras iniciar sesión
     }
 }

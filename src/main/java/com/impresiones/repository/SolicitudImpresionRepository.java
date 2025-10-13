@@ -8,5 +8,6 @@ import com.impresiones.entity.SolicitudImpresion;
 public interface SolicitudImpresionRepository extends JpaRepository<SolicitudImpresion, Integer> {
     List<SolicitudImpresion> findByEstado(String estado);
     List<SolicitudImpresion> findByFuncionarioIdFuncionario(Integer idFuncionario);
-    
+    //List<SolicitudImpresion> obtenerTodasLasSolicitudes();
+
 }
