@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Funcionarios</title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+    <h3>Funcionarios registrados</h3>
+    <a href="/admin/funcionarios/nuevo" class="btn btn-success mb-3">Nuevo funcionario</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th><th>Nombre</th><th>Correo</th><th>Perfil</th><th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="f : ${funcionarios}">
+                <td th:text="${f.idFuncionario}"></td>
+                <td th:text="${f.nombreFuncionario}"></td>
+                <td th:text="${f.correoFuncionario}"></td>
+                <td th:text="${f.perfilFuncionario}"></td>
+                <td>
+                    <a th:href="@{/admin/funcionarios/eliminar/{id}(id=${f.idFuncionario})}" 
+                       class="btn btn-danger btn-sm">Eliminar</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

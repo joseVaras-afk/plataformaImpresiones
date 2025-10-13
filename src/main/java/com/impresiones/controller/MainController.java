@@ -1,4 +1,4 @@
-package com.impresiones.controller;
+/*package com.impresiones.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,4 +20,4 @@ public class MainController {
     public String detalleSolicitud() {
         return "detalle-solicitud"; // Carga la vista de detalle
     }
-}
+}*/

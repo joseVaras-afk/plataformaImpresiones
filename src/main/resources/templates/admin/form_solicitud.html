@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Editar Solicitud</title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+    <h3>Editar Solicitud</h3>
+    <form th:action="@{/admin/solicitudes/actualizar}" th:object="${solicitud}" method="post">
+        <input type="hidden" th:field="*{idSolicitudImpresion}">
+        <div class="mb-3">
+            <label>Estado:</label>
+            <select th:field="*{estado}" class="form-select">
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobada">Aprobada</option>
+                <option value="Rechazada">Rechazada</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success">Guardar cambios</button>
+    </form>
+</body>
+</html>

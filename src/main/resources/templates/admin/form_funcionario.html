@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Nuevo Funcionario</title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+    <h3>Agregar Funcionario</h3>
+    <form th:action="@{/admin/funcionarios/guardar}" th:object="${funcionario}" method="post">
+        <div class="mb-3">
+            <label>Nombre:</label>
+            <input type="text" th:field="*{nombreFuncionario}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Correo:</label>
+            <input type="email" th:field="*{correoFuncionario}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Contraseña:</label>
+            <input type="password" th:field="*{contraseñaFuncionario}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Perfil:</label>
+            <input type="text" th:field="*{perfilFuncionario}" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Guardar</button>
+    </form>
+</body>
+</html>

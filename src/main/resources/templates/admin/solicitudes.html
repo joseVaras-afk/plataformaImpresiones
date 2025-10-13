@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Solicitudes de Impresión</title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+    <h3>Solicitudes de Impresión</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th><th>Asignatura</th><th>Estado</th><th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="s : ${solicitudes}">
+                <td th:text="${s.idSolicitudImpresion}"></td>
+                <td th:text="${s.asignatura.nombreAsignatura}"></td>
+                <td th:text="${s.estado}"></td>
+                <td>
+                    <a th:href="@{/admin/solicitudes/editar/{id}(id=${s.idSolicitudImpresion})}" 
+                       class="btn btn-warning btn-sm">Editar</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
