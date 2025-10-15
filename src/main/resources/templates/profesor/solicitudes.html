@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mis solicitudes</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body class="container mt-4">
+    <h3>Mis solicitudes</h3>
+
+    <a th:href="@{/profesor/solicitudes/nueva}" class="btn btn-success mb-3">Nueva solicitud</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Archivo</th>
+                <th>Fecha de impresión</th>
+                <th>Cantidad</th>
+                <th>Asignatura</th>
+                <th>Curso</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="s : ${solicitudes}">
+                <td th:text="${s.idSolicitudImpresion}"></td>
+                <td th:text="${s.nombreArchivo}"></td>
+                <td th:text="${#dates.format(s.fechaImpresion, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${s.cantidadCopias}"></td>
+                <td th:text="${s.asignatura != null ? s.asignatura.nombreAsignatura : '-'}"></td>
+                <td th:text="${s.curso != null ? s.curso : '-'}"></td>
+                <td th:text="${s.estado}"></td>
+                <td>
+                    <a th:href="@{|/profesor/solicitudes/ver/${s.idSolicitudImpresion}|}" class="btn btn-sm btn-primary">Ver</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

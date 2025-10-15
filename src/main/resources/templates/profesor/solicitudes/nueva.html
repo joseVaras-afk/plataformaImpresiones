@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nueva Solicitud de Impresión</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Crear Nueva Solicitud de Impresión</h2>
+
+    <form th:action="@{/profesor/guardar-solicitud}" method="post" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
+        <div class="mb-3">
+            <label class="form-label">Curso:</label>
+            <select class="form-select" name="curso" required>
+                <option value="">Seleccione un curso</option>
+                <option value="1°A">1°A</option>
+                <option value="1°B">1°B</option>
+                <option value="2°A">2°A</option>
+                <option value="2°B">2°B</option>
+                <option value="3°A">3°A</option>
+                <option value="3°B">3°B</option>
+                <option value="3°C">3°C</option>
+                <option value="4°A">4°A</option>
+                <option value="4°B">4°B</option>
+                <option value="4°C">4°C</option>
+                <option value="5°A">5°A</option>
+                <option value="5°B">5°B</option>
+                <option value="5°C">5°C</option>
+                <option value="6°A">6°A</option>
+                <option value="6°B">6°B</option>
+                <option value="6°C">6°C</option>
+                <option value="7°A">7°A</option>
+                <option value="7°B">7°B</option>
+                <option value="7°C">7°C</option>
+                <option value="8°A">8°A</option>
+                <option value="8°B">8°B</option>
+                <option value="8°C">8°C</option>
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label for="asignatura" class="form-label">Asignatura</label>
+            <select id="asignatura" name="asignaturas" class="form-select" required>
+                <option value="">Seleccione una asignatura</option>
+                <th:block th:each="asig : ${asignaturas}">
+                    <option th:value="${asig.idAsignatura}" th:text="${asig.nombreAsignatura}"></option>
+                </th:block>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Fecha de Impresión:</label>
+            <input type="date" name="fechaImpresion" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cantidad de Copias:</label>
+            <input type="number" name="cantidadCopias" class="form-control" min="1" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Archivo (PDF o Word):</label>
+            <input type="file" name="archivo" accept=".pdf,.doc,.docx" class="form-control" required>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -62,7 +62,7 @@ public class AdminController {
 
     @GetMapping("/solicitudes/editar/{id}")
     public String editarSolicitud(@PathVariable("id") int id, Model model) {
-        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id);
+        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
         model.addAttribute("solicitud", solicitud);
         return "admin/form_solicitud";
     }

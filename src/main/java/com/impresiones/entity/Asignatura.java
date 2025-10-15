@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 
 
 @Entity
-@Table(name = "Asignatura")
+@Table(name = "asignatura")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,6 +15,21 @@ public class Asignatura {
     @Column(name = "ID_Asignatura")
     private Integer idAsignatura;
 
-    @Column(name = "Nombre_Asignatura")
+    @Column(name = "nombre_asignatura")
     private String nombreAsignatura;
+
+    // Getters y Setters
+    public Integer getIdAsignatura() {
+        return idAsignatura;
+    }
+    public void setIdAsignatura(Integer idAsignatura) {
+        this.idAsignatura = idAsignatura;
+    }
+    public String getNombreAsignatura() {
+        return nombreAsignatura;
+    }
+    public void setNombreAsignatura(String nombreAsignatura) {
+        this.nombreAsignatura = nombreAsignatura;
+    }
 }
+   

@@ -19,31 +19,37 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // ⚠️ No cifra las contraseñas — solo para desarrollo
-        return NoOpPasswordEncoder.getInstance();
+        return NoOpPasswordEncoder.getInstance(); // ⚠️ Solo para desarrollo
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // 🔧 Desactiva CSRF solo si es necesario (útil para desarrollo)
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Solo el ADMINISTRADOR puede acceder a rutas /admin/**
                 .requestMatchers("/admin/**").hasAuthority("ADMINISTRADOR")
-                // El PROFESOR puede acceder a rutas /profesor/**
                 .requestMatchers("/profesor/**").hasAuthority("PROFESOR")
-                // Recursos públicos (CSS, JS, imágenes, etc.)
                 .requestMatchers("/login", "/resources/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
-                // Cualquier otra ruta requiere autenticación
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .loginProcessingUrl("/login") // asegura que Spring maneje el POST del formulario
+                .loginProcessingUrl("/login")
                 .usernameParameter("username")
                 .passwordParameter("password")
-                .defaultSuccessUrl("/admin", true)
-                .failureUrl("/login?error") // si las credenciales fallan
+                .successHandler((request, response, authentication) -> {
+                    var authorities = authentication.getAuthorities();
+                    String redirectUrl = "/";
+
+                    if (authorities.stream().anyMatch(a -> a.getAuthority().equals("ADMINISTRADOR"))) {
+                        redirectUrl = "/admin";
+                    } else if (authorities.stream().anyMatch(a -> a.getAuthority().equals("PROFESOR"))) {
+                        redirectUrl = "/profesor";
+                    }
+
+                    response.sendRedirect(redirectUrl);
+                })
+                .failureUrl("/login?error")
                 .permitAll()
             )
             .logout(logout -> logout
@@ -51,9 +57,7 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/login?logout")
                 .permitAll()
             )
-            .exceptionHandling(ex -> ex
-                .accessDeniedPage("/403") // Página de error personalizada
-            );
+            .exceptionHandling(ex -> ex.accessDeniedPage("/403"));
 
         return http.build();
     }

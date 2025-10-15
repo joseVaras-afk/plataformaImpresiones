@@ -24,5 +24,5 @@ public class Funcionario {
     private String contrasenaFuncionario; // guarda hash más adelante
 
     @Column(name = "Perfil_Funcionario")
-    private String perfilFuncionario; // e.g. "PROFESOR", "JEFE", "ENCARGADO"
+    private String perfilFuncionario; // e.g. "PROFESOR", "ADMINISTRADOR","OPERADOR"
 }

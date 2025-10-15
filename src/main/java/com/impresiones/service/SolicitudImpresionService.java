@@ -81,8 +81,8 @@ public class SolicitudImpresionService {
     }
 
     // ✅ Nuevo método: obtener solicitud por ID
-    public SolicitudImpresion obtenerPorId(int id) {
-        return solicitudRepository.findById(id).orElse(null);
+    public Optional<SolicitudImpresion> obtenerPorId(int id) {
+        return solicitudRepository.findById(id);
     }
 
     // ✅ Nuevo método: actualizar una solicitud existente
@@ -90,6 +90,13 @@ public class SolicitudImpresionService {
         solicitudRepository.save(solicitud);
     }
     
+    public SolicitudImpresion guardar(SolicitudImpresion s) {
+        return solicitudRepository.save(s);
+    }
+
+    public void eliminar(Integer id) {
+        solicitudRepository.deleteById(id);
+    }
 
 
 }

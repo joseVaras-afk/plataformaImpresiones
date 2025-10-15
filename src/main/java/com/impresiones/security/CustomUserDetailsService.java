@@ -18,15 +18,15 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Funcionario funcionario = funcionarioRepository.findByCorreoFuncionario(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+    public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
+        Funcionario funcionario = funcionarioRepository.findByCorreoFuncionario(correo)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
 
         // Convertimos el rol a una autoridad
         String rol = funcionario.getPerfilFuncionario();
 
         return new org.springframework.security.core.userdetails.User(
-                funcionario.getNombreFuncionario(),
+                funcionario.getCorreoFuncionario(),
                 funcionario.getContrasenaFuncionario(),
                 Collections.singletonList(new SimpleGrantedAuthority(rol))
         );

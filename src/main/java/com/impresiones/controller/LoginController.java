@@ -13,6 +13,11 @@ public class LoginController {
 
     @GetMapping("/admin/index")
     public String mostrarInicio() {
-        return "index"; // página principal tras iniciar sesión
+        return "index"; // página principal administrador
+    }
+
+        @GetMapping("/profesor/index")
+    public String mostrarInicioProfesor() {
+        return "index"; // página principal PROFESOR
     }
 }
