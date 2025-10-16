@@ -1,9 +1,40 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<body>
-<div th:replace="layout :: content">
-    <h2>Bienvenido al sistema</h2>
-    <p>Seleccione una opción en el menú superior.</p>
-</div>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Página principal</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body class="container mt-4">
+    <h2>Bienvenido, <span sec:authentication="name"></span>!</h2>
+    <hr>
+
+    <!-- Contenido según rol -->
+    <div sec:authorize="hasAuthority('ADMINISTRADOR')">
+        <h4>Panel de Administrador</h4>
+        <ul>
+            <li><a th:href="@{/admin/funcionarios}">Gestionar usuarios</a></li>
+            <li><a th:href="@{/admin/solicitudes}">Ver Solicitudes</a></li>
+        </ul>
+    </div>
+
+    <div sec:authorize="hasAuthority('PROFESOR')">
+        <h4>Panel de Profesor</h4>
+        <ul>
+            <li><a th:href="@{/profesor/solicitudes/nueva}">Crear nueva solicitud</a></li>
+            <li><a th:href="@{/profesor/solicitudes}">Ver mis solicitudes</a></li>
+        </ul>
+    </div>
+
+    <div sec:authorize="hasAuthority('OPERADOR')">
+        <h4>Panel de Operador</h4>
+        <ul>
+            <li><a th:href="@{/operador/solicitudes}">Ver todas las solicitudes</a></li>
+        </ul>
+    </div>
+
+    <hr>
+    <a th:href="@{/logout}" class="btn btn-danger">Cerrar sesión</a>
 </body>
 </html>

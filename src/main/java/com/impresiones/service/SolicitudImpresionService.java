@@ -98,5 +98,18 @@ public class SolicitudImpresionService {
         solicitudRepository.deleteById(id);
     }
 
+    public List<SolicitudImpresion> listarTodasOrdenadas() {
+        return solicitudRepository.findAllByOrderByFechaCreacionAsc();
+    }
+
+       public void cambiarEstado(int id, String nuevoEstado) {
+        Optional<SolicitudImpresion> solicitudOpt = solicitudRepository.findById(id);
+        if (solicitudOpt.isPresent()) {
+            SolicitudImpresion solicitud = solicitudOpt.get();
+            solicitud.setEstado(nuevoEstado);
+            solicitudRepository.save(solicitud);
+        }
+    }
+
 
 }

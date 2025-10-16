@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitudes de Impresión</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body class="container mt-4">
+    <h2>Solicitudes de Impresión</h2>
+
+    <table class="table table-bordered table-striped mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Profesor</th>
+                <th>Asignatura</th>
+                <th>Archivo</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="solicitud : ${solicitudes}">
+                <td th:text="${solicitud.idSolicitudImpresion}"></td>
+                <td th:text="${solicitud.funcionario.nombreFuncionario}"></td>
+                <td th:text="${solicitud.asignatura.nombreAsignatura}"></td>
+                <td>
+                    <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}">Descargar</a>
+                </td>
+                <td>
+                    <a th:href="@{'/operador/imprimir/' + ${solicitud.idSolicitudImpresion}}" target="_blank"
+                        class="btn btn-sm btn-success">
+                        Imprimir
+                    </a>
+                </td>
+                <td th:text="${solicitud.fechaImpresion != null ? solicitud.fechaImpresion.format(T(java.time.format.DateTimeFormatter).ofPattern('dd-MM-yyyy')) : ''}"></td>
+                <td th:text="${solicitud.estado}"></td>
+                <td>
+                    <form th:action="@{'/operador/cambiarEstado/' + ${solicitud.idSolicitudImpresion}}" method="post">
+                        <input type="hidden" name="nuevoEstado" value="Impreso">
+                        <button type="submit" class="btn btn-success btn-sm"
+                                th:disabled="${solicitud.estado == 'Impreso'}">
+                            Marcar como Impreso
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

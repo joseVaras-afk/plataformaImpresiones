@@ -57,8 +57,5 @@ public class ProfesorController {
     public String homeProfesor() {
         return "redirect:/profesor/index";
     } 
-    @GetMapping("")
-    public String panelAdmin() {
-        return "profesor/index";
-    }
+
 }
