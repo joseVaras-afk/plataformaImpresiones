@@ -27,7 +27,7 @@
             <tr th:each="s : ${solicitudes}">
                 <td th:text="${s.idSolicitudImpresion}"></td>
                 <td th:text="${s.nombreArchivo}"></td>
-                <td th:text="${#dates.format(s.fechaImpresion, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${s.fechaImpresion != null ? s.fechaImpresion.format(T(java.time.format.DateTimeFormatter).ofPattern('dd-MM-yyyy')) : ''}"></td>
                 <td th:text="${s.cantidadCopias}"></td>
                 <td th:text="${s.asignatura != null ? s.asignatura.nombreAsignatura : '-'}"></td>
                 <td th:text="${s.curso != null ? s.curso : '-'}"></td>

@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,9 +29,7 @@ public class ProfesorSolicitudController {
     private final SolicitudImpresionService solicitudService;
     private final AsignaturaService asignaturaService;
 
-    @Value("${file.upload-dir:${user.home}/impresiones-uploads}")
-    private String uploadDir;
-
+   private final String uploadDir = System.getProperty("user.dir") + File.separator + "Impresiones-uploads";
     public ProfesorSolicitudController(AsignaturaRepository asignaturaRepository,
                                        FuncionarioRepository funcionarioRepository,
                                        SolicitudImpresionService solicitudService,
@@ -55,21 +53,22 @@ public class ProfesorSolicitudController {
     }
 
     // Formulario nueva solicitud
-    @GetMapping("/nueva")
-    public String nuevaSolicitudForm(Model model) {
+       @GetMapping("/nueva")
+    public String mostrarFormulario(Model model) {
+        List<Asignatura> asignaturas = asignaturaRepository.findAll();
+        model.addAttribute("asignatura", asignaturas);
         model.addAttribute("solicitud", new SolicitudImpresion());
-        model.addAttribute("asignaturas", asignaturaService.listarTodas());
-        model.addAttribute("cursos", List.of("1°A","1°B","1°C","2°A","2°B","2°C","3°A","3°B","3°C","4°A","4°B","4°C","5°A","5°B","5°C","6°A","6°B","6°C","7°A","7°B","7°C","8°A","8°B","8°C")); // vacío hasta seleccionar asignatura
         return "profesor/solicitudes/nueva";
     }
-
 
     // Guardar solicitud con archivo
     @PostMapping("/guardar")
     public String guardarSolicitud(@ModelAttribute SolicitudImpresion solicitud,
                                   @RequestParam("archivo") MultipartFile archivo,
-                                  @RequestParam("asignaturaId") Integer asignaturaId,
-                                  @RequestParam(value="cursoId", required=false) Integer cursoId,
+                                  @RequestParam("curso") String curso,
+                                  @RequestParam("asignatura") Integer asignatura,
+                                  @RequestParam("fechaImpresion") String fechaImpresion,
+                                  @RequestParam("cantidadCopias") Integer cantidadCopias,
                                   @AuthenticationPrincipal User user,
                                   Model model) throws IOException {
 
@@ -80,12 +79,20 @@ public class ProfesorSolicitudController {
         solicitud.setFuncionario(funcionario);
 
         // Fecha de creación
-        solicitud.setFechaCreacion(LocalDateTime.now());
+        solicitud.setFechaCreacion(LocalDate.now());
+
+        // Fecha de impresión
+        solicitud.setFechaImpresion(LocalDate.parse(fechaImpresion));
 
         // Asignatura
-        asignaturaRepository.findById(asignaturaId).ifPresent(solicitud::setAsignatura);
-
-    
+        Asignatura a = asignaturaRepository.findById(asignatura)
+                .orElseThrow(() -> new RuntimeException("Asignatura no encontrada: " + asignatura));
+        solicitud.setAsignatura(a);
+        // Curso
+        solicitud.setCurso(curso);
+        
+        // Cantidad de copias
+        solicitud.setCantidadCopias(cantidadCopias);
 
         // Guardar archivo si existe
         if (archivo != null && !archivo.isEmpty()) {
@@ -96,14 +103,19 @@ public class ProfesorSolicitudController {
             Files.createDirectories(targetPath);
             Path filePath = targetPath.resolve(filename);
             Files.copy(archivo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Archivo recibido: " + archivo.getOriginalFilename());
 
+            //Nombre Archivo
             solicitud.setNombreArchivo(original);
-            solicitud.setRutaArchivo(filePath.toString());
+            //Ruta Archivo
+            solicitud.setRutaArchivo("impresiones-uploads/" + filename);
         }
-
+        //estado
         solicitud.setEstado("PENDIENTE");
+        //Motivo Rechazo
+        solicitud.setMotivoRechazo("");
         solicitudService.guardar(solicitud);
-        return "redirect:/profesor/solicitudes";
+        return "redirect:/profesor/solicitudes/nueva";
     }
 
     // Ver detalle
@@ -117,4 +129,5 @@ public class ProfesorSolicitudController {
         model.addAttribute("solicitud", s);
         return "profesor/ver_solicitud";
     }
+
 }

@@ -11,37 +11,37 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Información General</h5>
-            <p><strong>ID Solicitud:</strong> <span th:text="${solicitud.idSolicitudImpresion}"></span></p>
-            <p><strong>Funcionario:</strong> <span th:text="${solicitud.funcionario.nombreFuncionario}"></span></p>
+            <p><strong>ID Solicitud:</strong> <span th:text="${solicitudes.idSolicitudImpresion}"></span></p>
+            <p><strong>Funcionario:</strong> <span th:text="${solicitudes.funcionario.ID_Funcionario}"></span></p>
             <p><strong>Asignatura:</strong> 
-                <span th:text="${solicitud.asignatura != null ? solicitud.asignatura.nombreAsignatura : '-'}"></span>
+                <span th:text="${solicitudes.asignatura.ID_Asignatura != null ? solicitudes.ID_Asignatura : '-'}"></span>
             </p>
             <p><strong>Curso:</strong> 
-                <span th:text="${solicitud.curso != null ? solicitud.curso : '-'}"></span>
+                <span th:text="${solicitudes.curso != null ? solicitudes.curso : '-'}"></span>
             </p>
             <p><strong>Fecha de Impresión:</strong> 
-                <span th:text="${#dates.format(solicitud.fechaImpresion, 'yyyy-MM-dd HH:mm')}"></span>
+                <span th:text="${#dates.format(solicitudes.fechaImpresion, 'dd-mm-yyyy')}"></span>
             </p>
             <p><strong>Cantidad de Copias:</strong> 
-                <span th:text="${solicitud.cantidadCopias}"></span>
+                <span th:text="${solicitudes.cantidadCopias}"></span>
             </p>
             <p><strong>Estado:</strong> 
-                <span th:text="${solicitud.estado}"></span>
+                <span th:text="${solicitudes.estado}"></span>
             </p>
         </div>
 
         <div class="card-footer">
             <h6>Archivo adjunto</h6>
-            <p th:if="${solicitud.nombreArchivo}">
-                <a th:href="@{|/uploads/${#strings.substringAfterLast(solicitud.rutaArchivo, '\\') }|}" 
-                   th:text="${solicitud.nombreArchivo}" target="_blank"></a>
+            <p th:if="${solicitudes.nombreArchivo}">
+                <a th:href="@{|/uploads/${#strings.substringAfterLast(solicitudes.rutaArchivo, '\\') }|}" 
+                   th:text="${solicitudes.nombreArchivo}" target="_blank"></a>
             </p>
-            <p th:if="${!solicitud.nombreArchivo}">
+            <p th:if="${!solicitudes.nombreArchivo}">
                 <em>No se adjuntó archivo.</em>
             </p>
         </div>
     </div>
 
-    <a th:href="@{/profesor/solicitudes}" class="btn btn-secondary mt-3">Volver</a>
+    <a th:href="@{/profesor}" class="btn btn-secondary mt-3">Volver</a>
 </body>
 </html>

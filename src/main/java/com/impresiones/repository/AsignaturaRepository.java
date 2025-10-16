@@ -11,5 +11,6 @@ import com.impresiones.entity.Asignatura;
 public interface AsignaturaRepository extends JpaRepository<Asignatura, Integer> { 
     List<Asignatura> findAll();
     Optional<Asignatura> findById(Integer idAsignatura);
+    Optional<Asignatura> findByNombreAsignatura(String nombreAsignatura);
 }
 

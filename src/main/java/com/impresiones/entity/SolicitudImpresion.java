@@ -2,7 +2,7 @@ package com.impresiones.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "solicitud_impresion")
@@ -16,7 +16,7 @@ public class SolicitudImpresion {
     private Integer idSolicitudImpresion;
 
     @Column(name = "Fecha_Impresion")
-    private LocalDateTime fechaImpresion; // fecha requerida para la impresión
+    private LocalDate fechaImpresion; // fecha requerida para la impresión
 
     @Column(name = "nombre_archivo")
     private String nombreArchivo;
@@ -45,5 +45,5 @@ public class SolicitudImpresion {
     private String Curso;
 
     @Column(name = "Fecha_Creacion")
-    private LocalDateTime fechaCreacion; 
+    private LocalDate fechaCreacion; 
 }

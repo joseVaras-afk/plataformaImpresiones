@@ -9,7 +9,7 @@
 <div class="container mt-5">
     <h2 class="text-center mb-4">Crear Nueva Solicitud de Impresión</h2>
 
-    <form th:action="@{/profesor/guardar-solicitud}" method="post" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
+    <form th:action="@{/profesor/solicitudes/guardar}" method="post" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
         <div class="mb-3">
             <label class="form-label">Curso:</label>
             <select class="form-select" name="curso" required>
@@ -41,9 +41,9 @@
         
         <div class="mb-3">
             <label for="asignatura" class="form-label">Asignatura</label>
-            <select id="asignatura" name="asignaturas" class="form-select" required>
+            <select id="asignatura" name="asignatura" class="form-select" required>
                 <option value="">Seleccione una asignatura</option>
-                <th:block th:each="asig : ${asignaturas}">
+                <th:block th:each="asig : ${asignatura}">
                     <option th:value="${asig.idAsignatura}" th:text="${asig.nombreAsignatura}"></option>
                 </th:block>
             </select>

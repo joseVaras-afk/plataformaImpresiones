@@ -13,5 +13,6 @@ public interface SolicitudImpresionRepository extends JpaRepository<SolicitudImp
     List<SolicitudImpresion> findByFuncionarioIdFuncionario(Integer idFuncionario);
     List<SolicitudImpresion> findByFuncionario(Funcionario funcionario);
     Optional<SolicitudImpresion> findById(Integer id);
+    List<SolicitudImpresion> findAll();
 
 }
