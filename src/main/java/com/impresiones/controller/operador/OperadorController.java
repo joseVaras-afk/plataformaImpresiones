@@ -2,6 +2,7 @@ package com.impresiones.controller.operador;
 
 import com.impresiones.entity.SolicitudImpresion;
 import com.impresiones.service.SolicitudImpresionService;
+import com.impresiones.service.EmailService;
 import com.impresiones.repository.SolicitudImpresionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -12,6 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.io.File;
 
 @Controller
@@ -20,19 +24,56 @@ public class OperadorController {
 
     @Autowired
     private SolicitudImpresionService solicitudService;
+    @Autowired
+    private SolicitudImpresionRepository solicitudRepository;
+    @Autowired
+    private EmailService emailService;
 
     // Mostrar todas las solicitudes
     @GetMapping("/solicitudes")
-    public String listarSolicitudes(Model model) {
-        model.addAttribute("solicitudes", solicitudService.listarTodasOrdenadas());
-        return "operador/solicitudes";
-    }
+   public String listarSolicitudes(Model model) {
+    List<SolicitudImpresion> solicitudes = solicitudRepository.findAll();
+
+    solicitudes.sort(Comparator
+        .comparing((SolicitudImpresion s) -> !"APROBADO".equals(s.getEstado())) // Pendientes primero
+        .thenComparing(SolicitudImpresion::getFechaCreacion));
+
+    model.addAttribute("solicitudes", solicitudes);
+    return "operador/solicitudes";
+}
+
+   
 
     // Cambiar estado de la solicitud
     @PostMapping("/cambiarEstado/{id}")
-    public String cambiarEstado(@PathVariable int id, @RequestParam String nuevoEstado) {
-        solicitudService.cambiarEstado(id, nuevoEstado);
-        return "redirect:/operador/solicitudes";
+    @ResponseBody
+    public boolean cambiarEstado(int id, String estado, String motivo) {
+        Optional<SolicitudImpresion> opt = solicitudRepository.findById(id);
+        if (opt.isPresent()) {
+            SolicitudImpresion solicitud = opt.get();
+            solicitud.setEstado(estado);
+            solicitudRepository.save(solicitud);
+
+            // Enviar correo
+            String destinatario = solicitud.getFuncionario().getCorreoFuncionario();
+            String asunto = "Actualización de estado de su solicitud de impresión";
+            String mensaje = "Estimado/a " + solicitud.getFuncionario().getNombreFuncionario() + ",\n\n"
+                    + "Su solicitud de impresión (ID: " + solicitud.getIdSolicitudImpresion()+")\n" +" Asignatura: "+solicitud.getAsignatura()+"\n" + 
+                    " Curso: "+solicitud.getCurso()+"\n Archivo: "+solicitud.getNombreArchivo() +"\n ha sido marcada como "
+                    + estado + ".\n Por favor pase a retirar el  material\n\n Escuela Arturo Alessandri Palma.\n Sistema de Impresiones\n";
+
+            if ("RECHAZADO".equalsIgnoreCase(estado) && motivo != null && !motivo.isBlank()) {
+                mensaje += "La solicitud de impresión del archivo: "+solicitud.getNombreArchivo()+" para el curso "+solicitud.getCurso()+
+                "\n Ha sido RECHAZADA por el siguiente motivo: " + motivo + "\n\n";
+            }
+
+            mensaje += "Saludos cordiales,\nSistema de Impresiones";
+
+            emailService.enviarCorreo(destinatario, asunto, mensaje);
+
+            return true;
+        }
+        return false;
     }
 
     // Descargar archivo

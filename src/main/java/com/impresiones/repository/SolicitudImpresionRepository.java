@@ -15,5 +15,6 @@ public interface SolicitudImpresionRepository extends JpaRepository<SolicitudImp
     Optional<SolicitudImpresion> findById(Integer id);
     List<SolicitudImpresion> findAll();
     List<SolicitudImpresion> findAllByOrderByFechaCreacionAsc();
+    List<SolicitudImpresion> findAllByOrderByEstadoAscFechaCreacionAsc();
 
 }

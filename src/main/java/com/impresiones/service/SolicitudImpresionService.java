@@ -1,10 +1,13 @@
 package com.impresiones.service;
 
 import com.impresiones.entity.SolicitudImpresion;
-import com.impresiones.entity.Funcionario;
+import com.impresiones.service.EmailService;
 import com.impresiones.repository.SolicitudImpresionRepository;
 import com.impresiones.repository.FuncionarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.impresiones.entity.SolicitudImpresion;
 
@@ -20,6 +23,9 @@ public class SolicitudImpresionService {
 
     @Autowired
     private FuncionarioRepository funcionarioRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     // Crear nueva solicitud
     public SolicitudImpresion crearSolicitud(SolicitudImpresion solicitud) {
@@ -37,31 +43,6 @@ public class SolicitudImpresionService {
         return solicitudRepository.findByFuncionarioIdFuncionario(idFuncionario);
     }
 
-    // Aprobar solicitud
-    public boolean aprobarSolicitud(Integer idSolicitud) {
-        Optional<SolicitudImpresion> optional = solicitudRepository.findById(idSolicitud);
-        if (optional.isPresent()) {
-            SolicitudImpresion solicitud = optional.get();
-            solicitud.setEstado("APROBADO");
-            solicitud.setMotivoRechazo(null);
-            solicitudRepository.save(solicitud);
-            return true;
-        }
-        return false;
-    }
-
-    // Rechazar solicitud con motivo
-    public boolean rechazarSolicitud(Integer idSolicitud, String motivo) {
-        Optional<SolicitudImpresion> optional = solicitudRepository.findById(idSolicitud);
-        if (optional.isPresent()) {
-            SolicitudImpresion solicitud = optional.get();
-            solicitud.setEstado("RECHAZADO");
-            solicitud.setMotivoRechazo(motivo);
-            solicitudRepository.save(solicitud);
-            return true;
-        }
-        return false;
-    }
 
     // Marcar solicitud como impresa
     public boolean marcarImpreso(Integer idSolicitud) {
@@ -102,13 +83,31 @@ public class SolicitudImpresionService {
         return solicitudRepository.findAllByOrderByFechaCreacionAsc();
     }
 
-       public void cambiarEstado(int id, String nuevoEstado) {
-        Optional<SolicitudImpresion> solicitudOpt = solicitudRepository.findById(id);
-        if (solicitudOpt.isPresent()) {
-            SolicitudImpresion solicitud = solicitudOpt.get();
-            solicitud.setEstado(nuevoEstado);
+       public boolean cambiarEstado(int id, String estado, String motivo) {
+        Optional<SolicitudImpresion> opt = solicitudRepository.findById(id);
+        if (opt.isPresent()) {
+            SolicitudImpresion solicitud = opt.get();
+            solicitud.setEstado(estado);
             solicitudRepository.save(solicitud);
+
+            // Enviar correo
+            String destinatario = solicitud.getFuncionario().getCorreoFuncionario();
+            String asunto = "Actualización de estado de su solicitud de impresión";
+            String mensaje = "Estimado/a " + solicitud.getFuncionario().getNombreFuncionario() + ",\n\n"
+                    + "Su solicitud de impresión (ID: " + solicitud.getIdSolicitudImpresion() + ") ha sido marcada como "
+                    + estado + ".\n\n";
+
+            if ("RECHAZADO".equalsIgnoreCase(estado) && motivo != null && !motivo.isBlank()) {
+                mensaje += "Motivo del rechazo: " + motivo + "\n\n";
+            }
+
+            mensaje += "Saludos cordiales,\nSistema de Impresiones";
+
+            emailService.enviarCorreo(destinatario, asunto, mensaje);
+
+            return true;
         }
+        return false;
     }
 
 

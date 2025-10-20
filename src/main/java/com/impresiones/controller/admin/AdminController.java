@@ -3,6 +3,7 @@ package com.impresiones.controller.admin;
 import com.impresiones.entity.Funcionario;
 import com.impresiones.entity.SolicitudImpresion;
 import com.impresiones.service.FuncionarioService;
+import com.impresiones.repository.SolicitudImpresionRepository;
 import com.impresiones.service.SolicitudImpresionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,6 +21,8 @@ public class AdminController {
 
     @Autowired
     private SolicitudImpresionService solicitudService;
+    @Autowired
+    private SolicitudImpresionRepository SolicitudImpresionRepository;
 
     @GetMapping("")
     public String panelAdmin() {
@@ -59,10 +62,20 @@ public class AdminController {
         model.addAttribute("solicitudes", solicitudes);
         return "admin/solicitudes";
     }
+    // Cambiar estado de la solicitud
+    @PostMapping("/cambiarEstado/{id}")
+@ResponseBody
+public String cambiarEstado(@PathVariable int id,
+                            @RequestParam String estado,
+                            @RequestParam(required = false) String motivo) {
+    boolean actualizado = solicitudService.cambiarEstado(id, estado, motivo);
+    return actualizado ? "ok" : "error";
+}
 
-    @GetMapping("/solicitudes/editar/{id}")
-    public String editarSolicitud(@PathVariable("id") int id, Model model) {
+        @GetMapping("/solicitudes/rechazar/{id}")
+    public String rechazarSolicitud(@PathVariable("id") int id, Model model) {
         SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
+        solicitud.setEstado("RECHAZADO");
         model.addAttribute("solicitud", solicitud);
         return "admin/form_solicitud";
     }

@@ -1,28 +1,161 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Solicitudes de Impresión</title>
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <title>Gestión de Solicitudes</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        table {
+            background: #fff;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        h2 {
+            color: #0d6efd;
+            margin-bottom: 20px;
+        }
+        .btn {
+            margin: 2px;
+        }
+    </style>
 </head>
-<body class="p-4">
-    <h3>Solicitudes de Impresión</h3>
-    <table class="table table-bordered">
+<body class="container mt-4">
+    <h2>Gestión de Solicitudes de Impresión</h2>
+
+    <table>
         <thead>
             <tr>
-                <th>ID</th><th>Asignatura</th><th>Estado</th><th>Acciones</th>
+                <th>ID</th>
+                <th>Profesor</th>
+                <th>Curso</th>
+                <th>Asignatura</th>
+                <th>Cantidad</th>
+                <th>Archivo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
-        <tbody>
-            <tr th:each="s : ${solicitudes}">
-                <td th:text="${s.idSolicitudImpresion}"></td>
-                <td th:text="${s.asignatura.nombreAsignatura}"></td>
-                <td th:text="${s.estado}"></td>
+        <tbody id="tabla-solicitudes">
+            <tr th:each="solicitud : ${solicitudes}" th:data-id="${solicitud.idSolicitudImpresion}">
+                <td th:text="${solicitud.idSolicitudImpresion}"></td>
+                <td th:text="${solicitud.funcionario.nombreFuncionario}"></td>
+                <td th:text="${solicitud.curso}"></td>
+                <td th:text="${solicitud.asignatura.nombreAsignatura}"></td>
+                <td th:text="${solicitud.cantidadCopias}"></td>
                 <td>
-                    <a th:href="@{/admin/solicitudes/editar/{id}(id=${s.idSolicitudImpresion})}" 
-                       class="btn btn-warning btn-sm">Editar</a>
+                    <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}">Ver Archivo</a>
+                </td>
+                <td th:text="${solicitud.estado}" class="estado"></td>
+                <td>
+                    <button class="btn btn-success btn-aprobar" th:data-id="${solicitud.idSolicitudImpresion}"
+                        th:if="${solicitud.estado == 'PENDIENTE'}">Aprobar</button>
+                    <button class="btn btn-danger btn-rechazar" th:data-id="${solicitud.idSolicitudImpresion}"
+                        th:if="${solicitud.estado == 'PENDIENTE'}">Rechazar</button>
                 </td>
             </tr>
         </tbody>
     </table>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const tabla = document.getElementById("tabla-solicitudes");
+
+// Manejar botones Aprobar / Rechazar
+    tabla.addEventListener("click", async (e) => {
+        if (e.target.classList.contains("btn-aprobar") || e.target.classList.contains("btn-rechazar")) {
+            const id = e.target.dataset.id;
+            let estado = "";
+            let motivo = "";
+
+            if (e.target.classList.contains("btn-aprobar")) {
+                estado = "APROBADO";
+            } else {
+                estado = "RECHAZADO";
+                // Mostrar cuadro para motivo
+                const { value: texto } = await Swal.fire({
+                    title: 'Motivo del rechazo',
+                    input: 'textarea',
+                    inputPlaceholder: 'Escriba el motivo del rechazo...',
+                    inputAttributes: {
+                        'aria-label': 'Motivo del rechazo'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Enviar',
+                    cancelButtonText: 'Cancelar'
+                });
+
+                if (texto === undefined) return; // Cancelado
+                motivo = texto || "Sin motivo especificado";
+            }
+
+            const response = await fetch(`/admin/cambiarEstado/${id}?estado=${estado}&motivo=${encodeURIComponent(motivo)}`, {
+                method: "POST"
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: estado === "APROBADO" ? 'success' : 'error',
+                    title: `Solicitud ${estado.toLowerCase()}`,
+                    text: estado === "RECHAZADO" ? `Motivo: ${motivo}` : '',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+
+                const fila = e.target.closest("tr");
+                fila.querySelector(".estado").innerText = estado;
+                fila.querySelectorAll("button").forEach(b => b.remove());
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Error al actualizar la solicitud',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        }
+    });
+
+    // ✅ Función para actualizar lista automáticamente
+    async function actualizarSolicitudes() {
+        try {
+            const response = await fetch('/admin/solicitudes');
+            if (!response.ok) return;
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const nuevasFilas = doc.querySelectorAll("#tabla-solicitudes tr");
+            const actualFilas = tabla.querySelectorAll("tr");
+
+            if (nuevasFilas.length !== actualFilas.length) {
+                tabla.innerHTML = ""; // Limpiar
+                nuevasFilas.forEach(fila => tabla.appendChild(fila.cloneNode(true)));
+                console.log("🔄 Tabla actualizada automáticamente");
+            }
+        } catch (err) {
+            console.error("Error actualizando solicitudes:", err);
+        }
+    }
+
+    // 🔁 Ejecutar actualización cada 5 segundos
+    setInterval(actualizarSolicitudes, 5000);
+});
+</script>
+
 </body>
 </html>
