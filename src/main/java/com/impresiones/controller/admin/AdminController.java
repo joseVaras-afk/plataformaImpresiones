@@ -58,10 +58,24 @@ public class AdminController {
     // ================= SOLICITUDES =================
     @GetMapping("/solicitudes")
     public String listarSolicitudes(Model model) {
-        List<SolicitudImpresion> solicitudes = solicitudService.obtenerTodasLasSolicitudes();
+        List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
         model.addAttribute("solicitudes", solicitudes);
         return "admin/solicitudes";
     }
+    //obetenr fragmento de solicitudes
+    @GetMapping("/admin/solicitudes/fragment")
+    public String obtenerFragmentoSolicitudes(Model model) {
+    List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
+    model.addAttribute("solicitudes", solicitudes);
+    return "solicitudes :: filas"; // Thymeleaf fragment
+}
+
+//opcion con json
+@GetMapping("/admin/solicitudes/json")
+@ResponseBody
+public List<SolicitudImpresion> listarSolicitudesJson() {
+    return solicitudService.listarTodasOrdenadas();
+}
     // Cambiar estado de la solicitud
     @PostMapping("/cambiarEstado/{id}")
 @ResponseBody

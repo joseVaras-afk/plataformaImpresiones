@@ -25,7 +25,7 @@
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody id="tabla-solicitudes">
+        <tbody id="tabla-solicitudes" >
             <tr th:each="solicitud : ${solicitudes}" th:data-id="${solicitud.idSolicitudImpresion}">
                 <td th:text="${solicitud.idSolicitudImpresion}"></td>
                 <td th:text="${solicitud.funcionario.nombreFuncionario}"></td>
@@ -111,28 +111,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ✅ Función para actualizar lista automáticamente
-    async function actualizarSolicitudes() {
-        try {
-            const response = await fetch('/admin/solicitudes');
-            if (!response.ok) return;
+    
+     // ✅ ACTUALIZACIÓN AUTOMÁTICA
+        async function actualizarSolicitudes() {
+    const response = await fetch('/admin/solicitudes/json');
+    if (!response.ok) return;
 
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+    const solicitudes = await response.json();
 
-            const nuevasFilas = doc.querySelectorAll("#tabla-solicitudes tr");
-            const actualFilas = tabla.querySelectorAll("tr");
+    tabla.innerHTML = ''; // Limpiar tabla
 
-            if (nuevasFilas.length !== actualFilas.length) {
-                tabla.innerHTML = ""; // Limpiar
-                nuevasFilas.forEach(fila => tabla.appendChild(fila.cloneNode(true)));
-                console.log("🔄 Tabla actualizada automáticamente");
-            }
-        } catch (err) {
-            console.error("Error actualizando solicitudes:", err);
-        }
-    }
+    solicitudes.forEach(s => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${s.idSolicitudImpresion}</td>
+            <td>${s.funcionario.nombreFuncionario}</td>
+            <td>${s.curso}</td>
+            <td>${s.asignatura.nombreAsignatura}</td>
+            <td>${s.cantidadCopias}</td>
+            <td>${s.fechaImpresion}</td>
+            <td><a href="/admin/descargar/${s.idSolicitudImpresion}">Descargar</a></td>
+            <td class="estado">${s.estado}</td>
+            <td>
+                    <button class="btn btn-success btn-aprobar" th:data-id="${solicitud.idSolicitudImpresion}"
+                        th:if="${solicitud.estado == 'PENDIENTE'}">Aprobar</button>
+                    <button class="btn btn-danger btn-rechazar" th:data-id="${solicitud.idSolicitudImpresion}"
+                        th:if="${solicitud.estado == 'PENDIENTE'}">Rechazar</button>
+         </td>`;
+        tabla.appendChild(fila);
+    });
+}
 
     // 🔁 Ejecutar actualización cada 5 segundos
     setInterval(actualizarSolicitudes, 5000);

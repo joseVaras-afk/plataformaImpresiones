@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.impresiones.entity.SolicitudImpresion;
-
+import org.springframework.data.domain.Sort;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,7 +80,10 @@ public class SolicitudImpresionService {
     }
 
     public List<SolicitudImpresion> listarTodasOrdenadas() {
-        return solicitudRepository.findAllByOrderByFechaCreacionAsc();
+        return solicitudRepository.findAll(Sort.by(
+        Sort.Order.asc("estado"), // primero las que no están impresas
+        Sort.Order.asc("fechaCreacion")
+    ));
     }
 
        public boolean cambiarEstado(int id, String estado, String motivo) {
@@ -96,12 +99,14 @@ public class SolicitudImpresionService {
             String mensaje = "Estimado/a " + solicitud.getFuncionario().getNombreFuncionario() + ",\n\n"
                     + "Su solicitud de impresión del curso"+solicitud.getCurso()+" asignatura "+ 
                     solicitud.getAsignatura().getNombreAsignatura()+ " ha sido marcada como "
-                    + estado + ".\n\n";
+                    + estado ;
 
             if ("RECHAZADO".equalsIgnoreCase(estado) && motivo != null && !motivo.isBlank()) {
                 mensaje += "Motivo del rechazo: " + motivo + "\n\n";
             }
-
+            if (estado== "IMPRESO") {
+                estado += ". Por favor pase a retirar el material\n\n";
+            }
             mensaje += "Saludos cordiales,\nSistema de Impresiones";
 
             emailService.enviarCorreo(destinatario, asunto, mensaje);

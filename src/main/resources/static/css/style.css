@@ -30,6 +30,8 @@ button, .btn {
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin-top: 10px;
+
 }
 
 button:hover, .btn:hover {
