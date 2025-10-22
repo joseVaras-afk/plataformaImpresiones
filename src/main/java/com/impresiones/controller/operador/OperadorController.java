@@ -2,10 +2,15 @@ package com.impresiones.controller.operador;
 
 import com.impresiones.entity.SolicitudImpresion;
 import com.impresiones.service.SolicitudImpresionService;
+
+import jakarta.annotation.Resource;
+import java.nio.file.Path;
+
 import com.impresiones.service.EmailService;
 import com.impresiones.repository.SolicitudImpresionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -17,6 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Controller
 @RequestMapping("/operador")
@@ -42,39 +50,59 @@ public class OperadorController {
     return "operador/solicitudes";
 }
 
+@GetMapping("/operador/solicitudes/fragment")
+public String obtenerFragmentoSolicitudes(Model model) {
+    List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
+    model.addAttribute("solicitudes", solicitudes);
+    return "solicitudes :: filas"; // Thymeleaf fragment
+}
+
+@GetMapping("/operador/verArchivo/{id}")
+public ResponseEntity<Resource> verArchivo(@PathVariable Integer id) throws IOException {
+    SolicitudImpresion solicitud = solicitudRepository.findById(id).orElse(null);
+    Path pathArchivo = Paths.get(solicitud.getRutaArchivo());
+
+    if (!Files.exists(pathArchivo)) {
+        return ResponseEntity.notFound().build();
+    }
+
+    Resource recurso = (Resource) new UrlResource(pathArchivo.toUri());
+
+    return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF) // fuerza a abrir como PDF
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + ((FileSystemResource) recurso).getFilename() + "\"")
+            .body(recurso);
+}
+
+
+
+
+
    
 
     // Cambiar estado de la solicitud
-    @PostMapping("/cambiarEstado/{id}")
+    @PostMapping("/marcarImpreso/{id}")
     @ResponseBody
-    public boolean cambiarEstado(int id, String estado, String motivo) {
-        Optional<SolicitudImpresion> opt = solicitudRepository.findById(id);
-        if (opt.isPresent()) {
-            SolicitudImpresion solicitud = opt.get();
-            solicitud.setEstado(estado);
-            solicitudRepository.save(solicitud);
+    public String marcarImpreso(@PathVariable int id) {
+        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
+        if (solicitud != null) {
+        solicitud.setEstado("IMPRESO");
+        solicitudRepository.save(solicitud);
 
-            // Enviar correo
-            String destinatario = solicitud.getFuncionario().getCorreoFuncionario();
-            String asunto = "Actualización de estado de su solicitud de impresión";
-            String mensaje = "Estimado/a " + solicitud.getFuncionario().getNombreFuncionario() + ",\n\n"
-                    + "Su solicitud de impresión (ID: " + solicitud.getIdSolicitudImpresion()+")\n" +" Asignatura: "+solicitud.getAsignatura()+"\n" + 
-                    " Curso: "+solicitud.getCurso()+"\n Archivo: "+solicitud.getNombreArchivo() +"\n ha sido marcada como "
-                    + estado + ".\n Por favor pase a retirar el  material\n\n Escuela Arturo Alessandri Palma.\n Sistema de Impresiones\n";
+        // Obtener correo del profesor que creó la solicitud
+        String correoProfesor = solicitud.getFuncionario().getCorreoFuncionario();
+        String asunto = "Tu solicitud ha sido impresa";
+        String mensaje = "Estimado/a " + solicitud.getFuncionario().getCorreoFuncionario() +
+                ",\n\nTu solicitud de impresión de la asignatura "+ solicitud.getAsignatura().getNombreAsignatura()+", curso "
+                + solicitud.getCurso()+" a sido marcada como impresa.\n\nSaludos,\nEquipo de Impresiones.";
 
-            if ("RECHAZADO".equalsIgnoreCase(estado) && motivo != null && !motivo.isBlank()) {
-                mensaje += "La solicitud de impresión del archivo: "+solicitud.getNombreArchivo()+" para el curso "+solicitud.getCurso()+
-                "\n Ha sido RECHAZADA por el siguiente motivo: " + motivo + "\n\n";
-            }
-
-            mensaje += "Saludos cordiales,\nSistema de Impresiones";
-
-            emailService.enviarCorreo(destinatario, asunto, mensaje);
-
-            return true;
-        }
-        return false;
+        // Enviar correo
+        emailService.enviarCorreo(correoProfesor, asunto, mensaje);
     }
+
+    return "redirect:/operador/solicitudes";
+    }
+
 
     // Descargar archivo
     @GetMapping("/descargar/{id}")

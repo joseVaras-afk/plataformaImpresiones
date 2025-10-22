@@ -1,146 +1,129 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <title>Solicitudes de Impresión</title>
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body {
-            background-color: #f9f9f9;
-            padding: 20px;
-        }
-
-        table {
-            background: #fff;
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        h2 {
-            color: #0d6efd;
-            margin-bottom: 20px;
-        }
-
-        .btn i {
-            margin-right: 4px;
-        }
-    </style>
 </head>
 
 <body class="container mt-4">
-    <h2>Solicitudes de Impresión</h2>
+    <h2 class="mb-4 text-center">Solicitudes de Impresión</h2>
 
-    <table>
-        <thead>
+    <table class="table table-striped table-hover align-middle shadow-sm">
+        <thead class="table-primary">
             <tr>
                 <th>ID</th>
                 <th>Profesor</th>
                 <th>Curso</th>
                 <th>Asignatura</th>
-                <th>Cant Copias</th>
+                <th>Cant. Copias</th>
+                <th>Fecha Retiro</th>
                 <th>Archivo</th>
+                <th>Imprimir</th>
                 <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody id="tabla-solicitudes">
+
+        <tbody id="tabla-solicitudes" th:fragment="filas">
             <tr th:each="solicitud : ${solicitudes}" th:data-id="${solicitud.idSolicitudImpresion}">
                 <td th:text="${solicitud.idSolicitudImpresion}"></td>
                 <td th:text="${solicitud.funcionario.nombreFuncionario}"></td>
                 <td th:text="${solicitud.curso}"></td>
                 <td th:text="${solicitud.asignatura.nombreAsignatura}"></td>
                 <td th:text="${solicitud.cantidadCopias}"></td>
+                <td th:text="${#temporals.format(solicitud.fechaImpresion, 'dd-MM-yyyy')}"></td>
                 <td>
-                    <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}">Descargar</a>
+                    <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}" class="btn btn-outline-primary btn-sm">
+                         Descargar
+                    </a>
                 </td>
-                <td th:text="${solicitud.estado}"></td>
                 <td>
-                    <button class="btn btn-success btn-impreso" th:data-id="${solicitud.idSolicitudImpresion}"
-                        th:if="${solicitud.estado == 'APROBADO'}">Aprobar</button>
+                                     <a th:href="@{'/operador/imprimir/' + ${solicitud.idSolicitudImpresion}}" target="_blank"
+                        class="btn btn-sm btn-success">
+                        Imprimir
+                    </a>
+                </td>
+
+                <td class="estado" th:text="${solicitud.estado}"></td>
+                <td>
+                    <button class="btn btn-success btn-impreso btn-sm"
+                            th:data-id="${solicitud.idSolicitudImpresion}"
+                            th:if="${solicitud.estado == 'APROBADO'}">
+                        <i class="bi bi-check-circle"></i> Marcar como impreso
+                    </button>
                 </td>
             </tr>
         </tbody>
     </table>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const tabla = document.getElementById("tabla-solicitudes");
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const tabla = document.getElementById("tabla-solicitudes");
+        // ✅ MARCAR COMO IMPRESO
+        tabla.addEventListener("click", async (e) => {
+            if (e.target.closest(".btn-impreso")) {
+                const btn = e.target.closest(".btn-impreso");
+                const id = btn.dataset.id;
 
-    // ✅ Función para marcar como impreso
-    tabla.addEventListener("click", async (e) => {
-        if (e.target.classList.contains("btn-impreso")) {
-            const id = e.target.dataset.id;
-            let estado = "IMPRESO";
-            let motivo = "";
-            const response = await fetch(`/operador/cambiarEstado/${id}?estado=${estado}&motivo=${encodeURIComponent(motivo)}`, {
-                method: "POST"
-            });
+                const response = await fetch(`/operador/marcarImpreso/${id}`, { method: "POST" });
 
-            if (response.ok) {
-                Swal.fire({
-                    icon: estado === "IMPRESO" ? 'success' : 'error',
-                    title: `Solicitud ${estado.toLowerCase()}`,
-                    text: estado === "RECHAZADO" ? `Motivo: ${motivo}` : '',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Solicitud marcada como impresa',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                    actualizarSolicitudes(); // 🔄 actualiza la lista al instante
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al actualizar la solicitud',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            }
+        });
+
+        // ✅ ACTUALIZACIÓN AUTOMÁTICA
+        async function actualizarSolicitudes() {
+            try {
+                const response = await fetch('/operador/solicitudes/fragment', {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
-                const fila = e.target.closest("tr");
-                fila.querySelector(".estado").innerText = estado;
-                fila.querySelectorAll("button").forEach(b => b.remove());
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Error al actualizar la solicitud',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 2000
-                });
+                if (!response.ok) return;
+
+                const fragmentHtml = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(fragmentHtml, 'text/html');
+                const nuevoTbody = doc.querySelector("tbody");
+
+                if (nuevoTbody) {
+                    tabla.innerHTML = nuevoTbody.innerHTML;
+                    console.log("✅ Lista de solicitudes actualizada");
+                }
+            } catch (err) {
+                console.error("Error al actualizar solicitudes:", err);
             }
         }
+
+        // 🔁 Actualiza cada 5 segundos
+        setInterval(actualizarSolicitudes, 5000);
     });
-
-    // ✅ Función para actualizar lista automáticamente
-    async function actualizarSolicitudes() {
-        try {
-            const response = await fetch('/operador/solicitudes');
-            if (!response.ok) return;
-
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            const nuevasFilas = doc.querySelectorAll("#tabla-solicitudes tr");
-            const actualFilas = tabla.querySelectorAll("tr");
-
-            if (nuevasFilas.length !== actualFilas.length) {
-                tabla.innerHTML = ""; // Limpiar
-                nuevasFilas.forEach(fila => tabla.appendChild(fila.cloneNode(true)));
-                console.log("🔄 Tabla actualizada automáticamente");
-            }
-        } catch (err) {
-            console.error("Error actualizando solicitudes:", err);
-        }
-    }
-
-    // 🔁 Ejecutar actualización cada 5 segundos
-    setInterval(actualizarSolicitudes, 5000);
-});
-</script>
+    </script>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </body>

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>Nueva Solicitud de Impresión</title>
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 <body class="bg-light">
 <div class="container mt-5">
@@ -69,5 +72,87 @@
         </div>
     </form>
 </div>
+<div id="notification" class="notification" style="display:none;"></div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const fechaInput = document.querySelector('input[name="fechaImpresion"]');
+    const hoy = new Date();
+
+    // Función para sumar días hábiles (sin contar sábado ni domingo)
+    function sumarDiasHabiles(fecha, diasHabiles) {
+        let contador = 0;
+        const nuevaFecha = new Date(fecha);
+
+        while (contador < diasHabiles) {
+            nuevaFecha.setDate(nuevaFecha.getDate() + 1);
+            const diaSemana = nuevaFecha.getDay(); // 0=Dom, 6=Sáb
+            if (diaSemana !== 0 && diaSemana !== 6) {
+                contador++;
+            }
+        }
+        return nuevaFecha;
+    }
+
+    // Calcula la fecha mínima (5 días hábiles desde hoy)
+    const fechaMinima = sumarDiasHabiles(hoy, 5);
+
+    // Formatea a YYYY-MM-DD
+    const yyyy = fechaMinima.getFullYear();
+    const mm = String(fechaMinima.getMonth() + 1).padStart(2, "0");
+    const dd = String(fechaMinima.getDate()).padStart(2, "0");
+    const fechaMinStr = `${yyyy}-${mm}-${dd}`;
+
+    // Bloquear fechas anteriores en el input
+    fechaInput.min = fechaMinStr;
+
+    // Validación visual si el usuario intenta saltarse el min
+    fechaInput.addEventListener("change", () => {
+        const seleccionada = new Date(fechaInput.value);
+        if (seleccionada < fechaMinima) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fecha no válida',
+                text: `Debes seleccionar una fecha al menos 5 días hábiles desde hoy (${fechaMinStr}).`,
+                confirmButtonColor: '#0d6efd'
+            });
+            fechaInput.value = "";
+        }
+    });
+});
+</script>
+
 </body>
+<script>
+function mostrarNotificacion(mensaje, tipo = 'exito') {
+    const notificacion = document.getElementById('notification');
+    notificacion.textContent = mensaje;
+    
+    // Estilo según tipo
+    if (tipo === 'exito') {
+        notificacion.style.backgroundColor = '#2e8b57'; // verde
+    } else if (tipo === 'error') {
+        notificacion.style.backgroundColor = '#d9534f'; // rojo
+    } else {
+        notificacion.style.backgroundColor = '#2d6cdf'; // azul
+    }
+
+    notificacion.style.display = 'block';
+    notificacion.style.opacity = '1';
+
+    // Desaparece después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.opacity = '0';
+        setTimeout(() => notificacion.style.display = 'none', 400);
+    }, 3000);
+}
+</script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+    const mensaje = /*[[${mensaje}]]*/ null;
+    const tipo = /*[[${tipo}]]*/ 'exito';
+    if (mensaje) {
+        mostrarNotificacion(mensaje, tipo);
+    }
+/*]]>*/
+</script>
 </html>

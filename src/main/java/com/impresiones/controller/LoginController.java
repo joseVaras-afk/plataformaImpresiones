@@ -1,20 +1,26 @@
 package com.impresiones.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import com.impresiones.entity.Funcionario;
+import com.impresiones.repository.FuncionarioRepository;
+import org.springframework.ui.Model;
+import com.impresiones.entity.Funcionario;
 
 @Controller
 public class LoginController {
 
-    // Página de login
+    @Autowired
+    private FuncionarioRepository funcionarioRepository;
+
     @GetMapping("/login")
     public String mostrarLogin() {
-        return "login"; // templates/login.html
+        return "login";
     }
 
-    // Redirección genérica según el rol del usuario
     @GetMapping("/index")
     public String redirigirSegunRol(Authentication auth) {
         if (auth == null) {
@@ -32,24 +38,34 @@ public class LoginController {
                     return "redirect:/operador/index";
             }
         }
-
-        // Si no tiene un rol válido, vuelve al login
         return "redirect:/login?error=sin_rol";
     }
 
-    // Puedes mantener estos mappings si quieres rutas directas
+    // ✅ Método común para agregar nombreFuncionario
+    private void agregarNombreFuncionario(Authentication authentication, Model model) {
+        if (authentication != null) {
+            String email = authentication.getName();
+            Funcionario funcionario = funcionarioRepository.findByCorreoFuncionario(email).orElse(null);
+            model.addAttribute("nombreFuncionario",
+                    funcionario != null ? funcionario.getNombreFuncionario() : email);
+        }
+    }
+
     @GetMapping("/admin/index")
-    public String adminIndex() {
+    public String adminIndex(Authentication authentication, Model model) {
+        agregarNombreFuncionario(authentication, model);
         return "index";
     }
 
     @GetMapping("/profesor/index")
-    public String profesorIndex() {
+    public String profesorIndex(Authentication authentication, Model model) {
+        agregarNombreFuncionario(authentication, model);
         return "index";
     }
 
     @GetMapping("/operador/index")
-    public String operadorIndex() {
+    public String operadorIndex(Authentication authentication, Model model) {
+        agregarNombreFuncionario(authentication, model);
         return "index";
     }
 }

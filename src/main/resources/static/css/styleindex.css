@@ -1,0 +1,91 @@
+/* styleindex.css */
+
+.user-info {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.panel {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+h2 {
+    color: var(--color-secundario, #ff69b4);
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+ul li {
+    margin: 10px 0;
+}
+
+ul li a {
+    text-decoration: none;
+    color: #004080;
+    font-weight: 500;
+}
+
+ul li a:hover {
+    color: #ff69b4;
+}
+
+footer {
+    text-align: center;
+    margin-top: 40px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* ===== HEADER GENERAL ===== */
+.header-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #37a0f7; /* fondo claro */
+    border-bottom: 3px solid #d1d9e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px 30px;
+    position: relative;
+}
+
+/* ===== LOGOS ===== */
+.header-logo-left img,
+.header-logo-right img {
+    height: 100px;
+    object-fit: contain;
+}
+
+/* ===== TÍTULO CENTRAL ===== */
+.school-title {
+    color: #ff84f5; /* azul marino */
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin-bottom: 0;
+}
+
+.school-subtitle {
+    color: #ff84f5;
+    font-size: 1rem;
+    margin-top: 0.2rem;
+}
+
+/* ===== INFO DE USUARIO ===== */
+.user-info {
+    position: center;
+    top: 15px;
+    right: 30px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 500;
+}

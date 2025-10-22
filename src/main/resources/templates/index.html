@@ -1,40 +1,77 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
     <meta charset="UTF-8">
-    <title>Página principal</title>
+    <title>Portal de Impresiones</title>
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/styleindex.css}">
 </head>
-<body class="container mt-4">
-    <h2>Bienvenido, <span sec:authentication="name"></span>!</h2>
-    <hr>
 
-    <!-- Contenido según rol -->
-    <div sec:authorize="hasAuthority('ADMINISTRADOR')">
-        <h4>Panel de Administrador</h4>
-        <ul>
-            <li><a th:href="@{/admin/funcionarios}">Gestionar usuarios</a></li>
-            <li><a th:href="@{/admin/solicitudes}">Ver Solicitudes</a></li>
-        </ul>
+<body class="bg-light">
+    <header class="header-custom d-flex justify-content-between align-items-center p-3">
+    <!-- Logo izquierda -->
+    <div class="header-logo-left">
+        <img th:src="@{/img/logo-escuela.png}" alt="Logo Escuela" width="140">
     </div>
 
-    <div sec:authorize="hasAuthority('PROFESOR')">
-        <h4>Panel de Profesor</h4>
-        <ul>
-            <li><a th:href="@{/profesor/solicitudes/nueva}">Crear nueva solicitud</a></li>
-            <li><a th:href="@{/profesor/solicitudes}">Ver mis solicitudes</a></li>
-        </ul>
+    <!-- Título central -->
+    <div class="text-center flex-grow-1">
+        <h1 class="school-title mb-0">Escuela Superior de Niñas Arturo Alessandri Palma</h1>
+        <h5 class="school-subtitle text-muted">Estación Central</h5>
     </div>
 
-    <div sec:authorize="hasAuthority('OPERADOR')">
-        <h4>Panel de Operador</h4>
-        <ul>
-            <li><a th:href="@{/operador/solicitudes}">Ver todas las solicitudes</a></li>
-        </ul>
+    <!-- Logo derecha -->
+    <div class="header-logo-right">
+        <img th:src="@{/img/slep.png}" alt="Logo SLEP" width="140">
     </div>
 
-    <hr>
-    <a th:href="@{/logout}" class="btn btn-danger">Cerrar sesión</a>
+   
+</header>
+
+ <!-- Usuario -->
+    <div class="user-info">
+        👋 Bienvenido, <span th:text="${nombreFuncionario}">Usuario</span>
+    </div>
+    <div class="container">
+        <div sec:authorize="hasAuthority('ADMINISTRADOR')" class="panel">
+            <h3>Panel de Administrador</h3>
+            <ul>
+                <li><a th:href="@{/admin/funcionarios}"><i class="bi bi-people"></i> Gestionar usuarios</a></li>
+                <li><a th:href="@{/admin/solicitudes}"><i class="bi bi-file-earmark-text"></i> Ver Solicitudes</a></li>
+            </ul>
+        </div>
+
+        <div sec:authorize="hasAuthority('PROFESOR')" class="panel">
+            <h3>Panel de Profesor</h3>
+            <ul>
+                <li><a th:href="@{/profesor/solicitudes/nueva}"><i class="bi bi-file-plus"></i> Crear nueva
+                        solicitud</a></li>
+                <li><a th:href="@{/profesor/solicitudes}"><i class="bi bi-list-ul"></i> Ver mis solicitudes</a></li>
+            </ul>
+        </div>
+
+        <div sec:authorize="hasAuthority('OPERADOR')" class="panel">
+            <h3>Panel de Operador</h3>
+            <ul>
+                <li><a th:href="@{/operador/solicitudes}"><i class="bi bi-printer"></i> Ver todas las solicitudes</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="text-center mt-4">
+            <a th:href="@{/logout}" class="btn btn-danger">
+                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Escuela Superior de Niñas Arturo Alessandri Palma — Estación Central</p>
+    </footer>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </body>
+
 </html>

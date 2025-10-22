@@ -5,28 +5,8 @@
     <title>Gestión de Solicitudes</title>
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body {
-            background-color: #f9f9f9;
-            padding: 20px;
-        }
-        table {
-            background: #fff;
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        h2 {
-            color: #0d6efd;
-            margin-bottom: 20px;
-        }
-        .btn {
-            margin: 2px;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
 </head>
 <body class="container mt-4">
     <h2>Gestión de Solicitudes de Impresión</h2>
@@ -39,6 +19,7 @@
                 <th>Curso</th>
                 <th>Asignatura</th>
                 <th>Cantidad</th>
+                <th>Fecha Retiro</th>
                 <th>Archivo</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -51,6 +32,7 @@
                 <td th:text="${solicitud.curso}"></td>
                 <td th:text="${solicitud.asignatura.nombreAsignatura}"></td>
                 <td th:text="${solicitud.cantidadCopias}"></td>
+                <td th:text="${solicitud.fechaImpresion}"></td>
                 <td>
                     <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}">Ver Archivo</a>
                 </td>

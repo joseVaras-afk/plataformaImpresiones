@@ -12,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +71,8 @@ public class ProfesorSolicitudController {
                                   @RequestParam("fechaImpresion") String fechaImpresion,
                                   @RequestParam("cantidadCopias") Integer cantidadCopias,
                                   @AuthenticationPrincipal User user,
-                                  Model model) throws IOException {
+                                  Model model,
+                                  RedirectAttributes redirectAttrs) throws IOException {
 
         // Asignar funcionario actual
         String correo = user.getUsername();
@@ -115,6 +117,8 @@ public class ProfesorSolicitudController {
         //Motivo Rechazo
         solicitud.setMotivoRechazo("");
         solicitudService.guardar(solicitud);
+        redirectAttrs.addFlashAttribute("mensaje", "✅ Solicitud creada con éxito");
+        redirectAttrs.addFlashAttribute("tipo", "exito");
         return "redirect:/profesor/solicitudes/nueva";
     }
 

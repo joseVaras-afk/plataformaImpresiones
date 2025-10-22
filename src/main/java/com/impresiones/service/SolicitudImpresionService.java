@@ -94,7 +94,8 @@ public class SolicitudImpresionService {
             String destinatario = solicitud.getFuncionario().getCorreoFuncionario();
             String asunto = "Actualización de estado de su solicitud de impresión";
             String mensaje = "Estimado/a " + solicitud.getFuncionario().getNombreFuncionario() + ",\n\n"
-                    + "Su solicitud de impresión (ID: " + solicitud.getIdSolicitudImpresion() + ") ha sido marcada como "
+                    + "Su solicitud de impresión del curso"+solicitud.getCurso()+" asignatura "+ 
+                    solicitud.getAsignatura().getNombreAsignatura()+ " ha sido marcada como "
                     + estado + ".\n\n";
 
             if ("RECHAZADO".equalsIgnoreCase(estado) && motivo != null && !motivo.isBlank()) {
