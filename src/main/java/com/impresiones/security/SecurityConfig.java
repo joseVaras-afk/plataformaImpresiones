@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 public class SecurityConfig {
@@ -25,26 +26,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/resources/**", "/static/**", "/css/**", "/js/**", "/images/**")
+                        .permitAll()
                         .requestMatchers("/admin/**").hasAuthority("ADMINISTRADOR")
                         .requestMatchers("/profesor/**").hasAuthority("PROFESOR")
                         .requestMatchers("/operador/**").hasAuthority("OPERADOR")
-                        .requestMatchers("/login", "/resources/**", "/static/**", "/css/**", "/js/**", "/images/**")
-                        .permitAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
-                        .successHandler((req, res, auth) -> res.sendRedirect("/index"))
+                        .defaultSuccessUrl("/index", false) // respeta la URL original
                         .failureUrl("/login?error")
                         .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll())
+                .logout(l -> l.logoutUrl("/logout").logoutSuccessUrl("/login?logout"))
                 .exceptionHandling(ex -> ex.accessDeniedPage("/403"));
 
         return http.build();

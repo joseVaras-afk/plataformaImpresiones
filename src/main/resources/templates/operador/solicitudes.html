@@ -7,6 +7,8 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 
 <body class="container mt-4">
@@ -63,14 +65,16 @@
     <script>
     document.addEventListener("DOMContentLoaded", () => {
         const tabla = document.getElementById("tabla-solicitudes");
-
+        const token  = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
         // ✅ MARCAR COMO IMPRESO
         tabla.addEventListener("click", async (e) => {
             if (e.target.closest(".btn-impreso")) {
                 const btn = e.target.closest(".btn-impreso");
                 const id = btn.dataset.id;
 
-                const response = await fetch(`/operador/marcarImpreso/${id}`, { method: "POST" });
+                const response = await fetch(`/operador/marcarImpreso/${id}`, { method: "POST", headers: {
+    [header]: token}});
 
                 if (response.ok) {
                     Swal.fire({

@@ -9,7 +9,8 @@ import com.impresiones.entity.Funcionario;
 import com.impresiones.repository.FuncionarioRepository;
 import org.springframework.ui.Model;
 import com.impresiones.entity.Funcionario;
-
+import org.springframework.security.web.csrf.CsrfToken;
+import jakarta.servlet.http.HttpServletRequest;
 @Controller
 public class LoginController {
 
@@ -17,7 +18,9 @@ public class LoginController {
     private FuncionarioRepository funcionarioRepository;
 
     @GetMapping("/login")
-    public String mostrarLogin() {
+    public String mostrarLogin(HttpServletRequest req, Model model) {
+        CsrfToken token = (CsrfToken) req.getAttribute("_csrf");
+        model.addAttribute("_csrf", token); // refuerza que esté
         return "login";
     }
 

@@ -34,8 +34,6 @@ public class OperadorController {
     private SolicitudImpresionService solicitudService;
     @Autowired
     private SolicitudImpresionRepository solicitudRepository;
-    @Autowired
-    private EmailService emailService;
 
     // Mostrar todas las solicitudes
     @GetMapping("/solicitudes")
@@ -75,32 +73,14 @@ public ResponseEntity<Resource> verArchivo(@PathVariable Integer id) throws IOEx
 }
 
 
-
-
-
-   
-
     // Cambiar estado de la solicitud
     @PostMapping("/marcarImpreso/{id}")
     @ResponseBody
     public String marcarImpreso(@PathVariable int id) {
-        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
-        if (solicitud != null) {
-        solicitud.setEstado("IMPRESO");
-        solicitudRepository.save(solicitud);
-
-        // Obtener correo del profesor que creó la solicitud
-        String correoProfesor = solicitud.getFuncionario().getCorreoFuncionario();
-        String asunto = "Tu solicitud ha sido impresa";
-        String mensaje = "Estimado/a " + solicitud.getFuncionario().getCorreoFuncionario() +
-                ",\n\nTu solicitud de impresión de la asignatura "+ solicitud.getAsignatura().getNombreAsignatura()+", curso "
-                + solicitud.getCurso()+" a sido marcada como impresa.\n\nSaludos,\nEquipo de Impresiones.";
-
-        // Enviar correo
-        emailService.enviarCorreo(correoProfesor, asunto, mensaje);
-    }
-
-    return "redirect:/operador/solicitudes";
+        String estado = "IMPRESO";
+        String motivo = "";
+        boolean actualizado = solicitudService.cambiarEstado(id, estado, motivo);
+        return actualizado ? "ok" : "error";
     }
 
 

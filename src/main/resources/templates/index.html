@@ -61,9 +61,10 @@
         </div>
 
         <div class="text-center mt-4">
-            <a th:href="@{/logout}" class="btn btn-danger">
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-            </a>
+            <form th:action="@{/logout}" method="post" class="d-inline">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="btn btn-link p-0 m-0 align-baseline">Cerrar sesión</button>
+            </form>
         </div>
     </div>
 

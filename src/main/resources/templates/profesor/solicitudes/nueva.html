@@ -67,6 +67,7 @@
             <label class="form-label">Archivo (PDF o Word):</label>
             <input type="file" name="archivo" accept=".pdf,.doc,.docx" class="form-control" required>
         </div>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
         <div class="text-end">
             <button type="submit" class="btn btn-primary">Enviar Solicitud</button>

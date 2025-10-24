@@ -6,7 +6,8 @@
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" th:href="@{/css/style.css}">
-
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 <body class="container mt-4">
     <h2>Gestión de Solicitudes de Impresión</h2>
@@ -34,7 +35,7 @@
                 <td th:text="${solicitud.cantidadCopias}"></td>
                 <td th:text="${solicitud.fechaImpresion}"></td>
                 <td>
-                    <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}">Ver Archivo</a>
+                    <a th:href="@{'/admin/descargar/' + ${solicitud.idSolicitudImpresion}}">Ver Archivo</a>
                 </td>
                 <td th:text="${solicitud.estado}" class="estado"></td>
                 <td>
@@ -50,7 +51,8 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const tabla = document.getElementById("tabla-solicitudes");
-
+    const token  = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
 // Manejar botones Aprobar / Rechazar
     tabla.addEventListener("click", async (e) => {
         if (e.target.classList.contains("btn-aprobar") || e.target.classList.contains("btn-rechazar")) {
@@ -80,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const response = await fetch(`/admin/cambiarEstado/${id}?estado=${estado}&motivo=${encodeURIComponent(motivo)}`, {
-                method: "POST"
+                method: "POST", headers: { [header]: token  }
             });
 
             if (response.ok) {

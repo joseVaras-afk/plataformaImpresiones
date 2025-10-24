@@ -6,10 +6,15 @@ import com.impresiones.service.FuncionarioService;
 import com.impresiones.repository.SolicitudImpresionRepository;
 import com.impresiones.service.SolicitudImpresionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
 
+import java.io.File;
 import java.util.List;
 
 @Controller
@@ -98,6 +103,31 @@ public String cambiarEstado(@PathVariable int id,
     public String actualizarSolicitud(@ModelAttribute SolicitudImpresion solicitud) {
         solicitudService.actualizarSolicitud(solicitud);
         return "redirect:/admin/solicitudes";
+    }
+    // Descargar archivo
+    @GetMapping("/descargar/{id}")
+    public ResponseEntity<FileSystemResource> descargarArchivo(@PathVariable("id") int id) {
+        // 1?? Buscar la solicitud en la base de datos
+        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
+
+        if (solicitud == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 2?? Obtener la ruta del archivo guardada en la base de datos
+        String rutaArchivo = solicitud.getRutaArchivo(); // ejemplo: "C:/uploads/solicitud_12.pdf"
+        File archivo = new File(rutaArchivo);
+
+        if (!archivo.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 3?? Preparar la respuesta para que se descargue
+        FileSystemResource resource = new FileSystemResource(archivo);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + archivo.getName() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
     
     @GetMapping("/admin")

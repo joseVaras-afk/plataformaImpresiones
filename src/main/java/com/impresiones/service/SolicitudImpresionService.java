@@ -97,7 +97,7 @@ public class SolicitudImpresionService {
             String destinatario = solicitud.getFuncionario().getCorreoFuncionario();
             String asunto = "Actualización de estado de su solicitud de impresión";
             String mensaje = "Estimado/a " + solicitud.getFuncionario().getNombreFuncionario() + ",\n\n"
-                    + "Su solicitud de impresión del curso"+solicitud.getCurso()+" asignatura "+ 
+                    + "Su solicitud de impresión del curso "+solicitud.getCurso()+" asignatura "+ 
                     solicitud.getAsignatura().getNombreAsignatura()+ " ha sido marcada como "
                     + estado ;
 
@@ -107,7 +107,7 @@ public class SolicitudImpresionService {
             if (estado== "IMPRESO") {
                 estado += ". Por favor pase a retirar el material\n\n";
             }
-            mensaje += "Saludos cordiales,\nSistema de Impresiones";
+            mensaje += " \n\n Saludos cordiales,\nSistema de Impresiones";
 
             emailService.enviarCorreo(destinatario, asunto, mensaje);
 
