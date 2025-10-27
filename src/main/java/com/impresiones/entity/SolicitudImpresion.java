@@ -27,6 +27,9 @@ public class SolicitudImpresion {
     @Column(name = "Ruta_Archivo")
     private String rutaArchivo;
 
+    @Column(name = "duplex")
+    private Boolean ambasCaras;
+
     @ManyToOne
     @JoinColumn(name = "ID_Asignatura")
     private Asignatura asignatura;

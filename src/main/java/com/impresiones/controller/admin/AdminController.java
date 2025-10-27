@@ -3,38 +3,57 @@ package com.impresiones.controller.admin;
 import com.impresiones.entity.Funcionario;
 import com.impresiones.entity.SolicitudImpresion;
 import com.impresiones.service.FuncionarioService;
-import com.impresiones.repository.SolicitudImpresionRepository;
 import com.impresiones.service.SolicitudImpresionService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.MediaType;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
     @Autowired
     private FuncionarioService funcionarioService;
 
     @Autowired
     private SolicitudImpresionService solicitudService;
-    @Autowired
-    private SolicitudImpresionRepository SolicitudImpresionRepository;
 
+    // ========= Helpers =========
+    private Path resolverRuta(String valorBD) {
+        // Por seguridad, quédate solo con el nombre
+        String fileName = Paths.get(valorBD).getFileName().toString();
+        return Paths.get(uploadDir).resolve(fileName).toAbsolutePath().normalize();
+    }
+
+    // ========= Vistas generales =========
     @GetMapping("")
     public String panelAdmin() {
         return "admin/index";
     }
 
-    // ================= FUNCIONARIOS =================
+    @GetMapping("/admin") // opcional: alias
+    public String adminHome() {
+        return "admin/index";
+    }
+
+    // ========= FUNCIONARIOS =========
     @GetMapping("/funcionarios")
     public String listarFuncionarios(Model model) {
         List<Funcionario> funcionarios = funcionarioService.listarFuncionarios();
@@ -60,42 +79,47 @@ public class AdminController {
         return "redirect:/admin/funcionarios";
     }
 
-    // ================= SOLICITUDES =================
+    // ========= SOLICITUDES =========
     @GetMapping("/solicitudes")
     public String listarSolicitudes(Model model) {
         List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
         model.addAttribute("solicitudes", solicitudes);
         return "admin/solicitudes";
     }
-    //obetenr fragmento de solicitudes
-    @GetMapping("/admin/solicitudes/fragment")
+
+    // Fragmento para refrescar tabla por Ajax (¡sin /admin extra!)
+    @GetMapping("/solicitudes/fragment")
     public String obtenerFragmentoSolicitudes(Model model) {
-    List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
-    model.addAttribute("solicitudes", solicitudes);
-    return "solicitudes :: filas"; // Thymeleaf fragment
-}
+        List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
+        model.addAttribute("solicitudes", solicitudes);
+        return "solicitudes :: filas";
+    }
 
-//opcion con json
-@GetMapping("/admin/solicitudes/json")
-@ResponseBody
-public List<SolicitudImpresion> listarSolicitudesJson() {
-    return solicitudService.listarTodasOrdenadas();
-}
-    // Cambiar estado de la solicitud
+    // JSON opcional (¡sin /admin extra!)
+    @GetMapping("/solicitudes/json")
+    @ResponseBody
+    public List<SolicitudImpresion> listarSolicitudesJson() {
+        return solicitudService.listarTodasOrdenadas();
+    }
+
+    // Cambiar estado
     @PostMapping("/cambiarEstado/{id}")
-@ResponseBody
-public String cambiarEstado(@PathVariable int id,
-                            @RequestParam String estado,
-                            @RequestParam(required = false) String motivo) {
-    boolean actualizado = solicitudService.cambiarEstado(id, estado, motivo);
-    return actualizado ? "ok" : "error";
-}
+    @ResponseBody
+    public String cambiarEstado(@PathVariable int id,
+                                @RequestParam String estado,
+                                @RequestParam(required = false) String motivo) {
+        boolean actualizado = solicitudService.cambiarEstado(id, estado, motivo);
+        return actualizado ? "ok" : "error";
+    }
 
-        @GetMapping("/solicitudes/rechazar/{id}")
+    // Rechazar (muestra formulario con estado ya en RECHAZADO)
+    @GetMapping("/solicitudes/rechazar/{id}")
     public String rechazarSolicitud(@PathVariable("id") int id, Model model) {
         SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
-        solicitud.setEstado("RECHAZADO");
-        model.addAttribute("solicitud", solicitud);
+        if (solicitud != null) {
+            solicitud.setEstado("RECHAZADO");
+            model.addAttribute("solicitud", solicitud);
+        }
         return "admin/form_solicitud";
     }
 
@@ -104,34 +128,64 @@ public String cambiarEstado(@PathVariable int id,
         solicitudService.actualizarSolicitud(solicitud);
         return "redirect:/admin/solicitudes";
     }
-    // Descargar archivo
+
+    // ========= Archivos =========
+
+    // Descargar
     @GetMapping("/descargar/{id}")
-    public ResponseEntity<FileSystemResource> descargarArchivo(@PathVariable("id") int id) {
-        // 1?? Buscar la solicitud en la base de datos
-        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
-
-        if (solicitud == null) {
+    public ResponseEntity<Resource> descargarArchivo(@PathVariable("id") int id) {
+        var solicitud = solicitudService.obtenerPorId(id).orElse(null);
+        if (solicitud == null || solicitud.getRutaArchivo() == null) {
             return ResponseEntity.notFound().build();
         }
 
-        // 2?? Obtener la ruta del archivo guardada en la base de datos
-        String rutaArchivo = solicitud.getRutaArchivo(); // ejemplo: "C:/uploads/solicitud_12.pdf"
-        File archivo = new File(rutaArchivo);
+        Path path = resolverRuta(solicitud.getRutaArchivo());
+        try {
+            if (!Files.exists(path)) {
+                return ResponseEntity.notFound().build();
+            }
 
-        if (!archivo.exists()) {
-            return ResponseEntity.notFound().build();
+            String fileName = path.getFileName().toString();
+            String mime = Files.probeContentType(path);
+            if (mime == null) mime = "application/octet-stream";
+
+            FileSystemResource resource = new FileSystemResource(path.toFile());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .contentType(MediaType.parseMediaType(mime))
+                    .body(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
-
-        // 3?? Preparar la respuesta para que se descargue
-        FileSystemResource resource = new FileSystemResource(archivo);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + archivo.getName() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
     }
-    
-    @GetMapping("/admin")
-    public String adminHome() {
-        return "admin/index"; // vista del panel admin
+
+    // Ver/Imprimir (inline)
+    @GetMapping("/imprimir/{id}")
+    public ResponseEntity<Resource> imprimirArchivo(@PathVariable("id") int id) {
+        var solicitud = solicitudService.obtenerPorId(id).orElse(null);
+        if (solicitud == null || solicitud.getRutaArchivo() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Path path = resolverRuta(solicitud.getRutaArchivo());
+        try {
+            if (!Files.exists(path)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource recurso = new UrlResource(path.toUri());
+            String fileName = path.getFileName().toString();
+            String mime = Files.probeContentType(path);
+            if (mime == null) mime = "application/pdf";
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                    .contentType(MediaType.parseMediaType(mime))
+                    .body(recurso);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

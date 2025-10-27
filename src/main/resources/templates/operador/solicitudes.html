@@ -23,6 +23,7 @@
                 <th>Asignatura</th>
                 <th>Cant. Copias</th>
                 <th>Fecha Retiro</th>
+                <th>Ambas Caras</th>
                 <th>Archivo</th>
                 <th>Imprimir</th>
                 <th>Estado</th>
@@ -38,6 +39,7 @@
                 <td th:text="${solicitud.asignatura.nombreAsignatura}"></td>
                 <td th:text="${solicitud.cantidadCopias}"></td>
                 <td th:text="${#temporals.format(solicitud.fechaImpresion, 'dd-MM-yyyy')}"></td>
+                <td th:text="${solicitud.ambasCaras}"></td>
                 <td>
                     <a th:href="@{'/operador/descargar/' + ${solicitud.idSolicitudImpresion}}" class="btn btn-outline-primary btn-sm">
                          Descargar
@@ -63,71 +65,126 @@
     </table>
 
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const tabla = document.getElementById("tabla-solicitudes");
-        const token  = document.querySelector('meta[name="_csrf"]').content;
-        const header = document.querySelector('meta[name="_csrf_header"]').content;
-        // ✅ MARCAR COMO IMPRESO
-        tabla.addEventListener("click", async (e) => {
-            if (e.target.closest(".btn-impreso")) {
-                const btn = e.target.closest(".btn-impreso");
-                const id = btn.dataset.id;
+document.addEventListener("DOMContentLoaded", () => {
+  const tabla = document.getElementById("tabla-solicitudes");
+  const token  = document.querySelector('meta[name="_csrf"]').content;
+  const header = document.querySelector('meta[name="_csrf_header"]').content;
 
-                const response = await fetch(`/operador/marcarImpreso/${id}`, { method: "POST", headers: {
-    [header]: token}});
+  // Delegación para Aprobar/Rechazar (tu código actual sirve)
+  tabla.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("btn-aprobar") || e.target.classList.contains("btn-rechazar")) {
+      const id = e.target.dataset.id;
+      let estado = "";
+      let motivo = "";
 
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Solicitud marcada como impresa',
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 2000,
-                        timerProgressBar: true
-                    });
-                    actualizarSolicitudes(); // 🔄 actualiza la lista al instante
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al actualizar la solicitud',
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 2000
-                    });
-                }
-            }
+      if (e.target.classList.contains("btn-aprobar")) {
+        estado = "APROBADO";
+      } else {
+        estado = "RECHAZADO";
+        const { value: texto } = await Swal.fire({
+          title: 'Motivo del rechazo',
+          input: 'textarea',
+          inputPlaceholder: 'Escriba el motivo del rechazo...',
+          showCancelButton: true,
+          confirmButtonText: 'Enviar',
+          cancelButtonText: 'Cancelar'
         });
+        if (texto === undefined) return; // cancelado
+        motivo = texto || "Sin motivo especificado";
+      }
 
-        // ✅ ACTUALIZACIÓN AUTOMÁTICA
-        async function actualizarSolicitudes() {
-            try {
-                const response = await fetch('/operador/solicitudes/fragment', {
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
+      const resp = await fetch(`/admin/cambiarEstado/${id}?estado=${encodeURIComponent(estado)}&motivo=${encodeURIComponent(motivo)}`, {
+        method: "POST",
+        headers: { [header]: token }
+      });
 
-                if (!response.ok) return;
+      if (resp.ok) {
+        Swal.fire({
+          icon: estado === "APROBADO" ? 'success' : 'info',
+          title: `Solicitud ${estado.toLowerCase()}`,
+          toast: true, position: 'top-end', showConfirmButton: false, timer: 2000
+        });
+        const fila = e.target.closest("tr");
+        fila.querySelector(".estado").innerText = estado;
+        fila.querySelectorAll("button").forEach(b => b.remove());
+      } else {
+        Swal.fire({ icon: 'warning', title: 'Error al actualizar', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+      }
+    }
+  });
 
-                const fragmentHtml = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(fragmentHtml, 'text/html');
-                const nuevoTbody = doc.querySelector("tbody");
+  // ✅ ACTUALIZACIÓN AUTOMÁTICA robusta
+  async function actualizarSolicitudes() {
+    try {
+      const response = await fetch('/admin/solicitudes/json', {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
 
-                if (nuevoTbody) {
-                    tabla.innerHTML = nuevoTbody.innerHTML;
-                    console.log("✅ Lista de solicitudes actualizada");
-                }
-            } catch (err) {
-                console.error("Error al actualizar solicitudes:", err);
-            }
+      // si no está OK, no toques la tabla
+      if (!response.ok) return;
+
+      const ct = response.headers.get('content-type') || '';
+      // si no es JSON (p.ej. login HTML), no toques la tabla
+      if (!ct.includes('application/json')) return;
+
+      const solicitudes = await response.json();
+
+      // reconstruir tbody
+      const frag = document.createDocumentFragment();
+
+      solicitudes.forEach(s => {
+        const tr = document.createElement('tr');
+        // formato fecha (opcional)
+        const fecha = s.fechaImpresion ? new Date(s.fechaImpresion).toLocaleDateString('es-CL') : '';
+
+        tr.innerHTML = `
+          <td>${s.idSolicitudImpresion}</td>
+          <td>${s.funcionario?.nombreFuncionario ?? ''}</td>
+          <td>${s.curso ?? ''}</td>
+          <td>${s.asignatura?.nombreAsignatura ?? ''}</td>
+          <td>${s.cantidadCopias ?? ''}</td>
+          <td>${fecha}</td>
+          <td>${s.ambasCaras ? 'Sí' : 'No'}</td>
+          <td><a href="/admin/descargar/${s.idSolicitudImpresion}">Ver Archivo</a></td>
+          <td class="estado">${s.estado}</td>
+          <td class="acciones"></td>
+        `;
+
+        // Botones solo si está PENDIENTE
+        if (s.estado === 'PENDIENTE') {
+          const acciones = tr.querySelector('.acciones');
+          const btnOk = document.createElement('button');
+          btnOk.className = 'btn btn-success btn-aprobar';
+          btnOk.dataset.id = s.idSolicitudImpresion;
+          btnOk.textContent = 'Aprobar';
+
+          const btnNo = document.createElement('button');
+          btnNo.className = 'btn btn-danger btn-rechazar ms-2';
+          btnNo.dataset.id = s.idSolicitudImpresion;
+          btnNo.textContent = 'Rechazar';
+
+          acciones.append(btnOk, btnNo);
         }
 
-        // 🔁 Actualiza cada 5 segundos
-        setInterval(actualizarSolicitudes, 5000);
-    });
-    </script>
+        frag.appendChild(tr);
+      });
+
+      // solo aquí limpio y pego el nuevo contenido
+      tabla.innerHTML = '';
+      tabla.appendChild(frag);
+
+    } catch (err) {
+      // si hay error (p.ej. JSON parse), no toco la tabla actual
+      console.error('No se pudo refrescar solicitudes:', err);
+    }
+  }
+
+  // 🔁 Ejecutar actualización cada 5 segundos
+  setInterval(actualizarSolicitudes, 5000);
+});
+</script>
+
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </body>

@@ -8,9 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.impresiones.entity.SolicitudImpresion;
 import org.springframework.data.domain.Sort;
+
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.List;
 import java.util.Optional;
 
@@ -117,4 +121,12 @@ public class SolicitudImpresionService {
     }
 
 
+  private String uploadDir = "${file.upload-dir}";
+
+  public String guardarArchivo(MultipartFile file) throws IOException {
+    String fileName = Path.of(file.getOriginalFilename()).getFileName().toString(); // sanea
+    Path destino = Paths.get(uploadDir).resolve(fileName);
+    Files.copy(file.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+    return fileName; // <-- guarda SOLO esto en la BD
+  }
 }

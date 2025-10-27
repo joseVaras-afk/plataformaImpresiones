@@ -12,7 +12,7 @@
 <div class="container mt-5">
     <h2 class="text-center mb-4">Crear Nueva Solicitud de Impresión</h2>
 
-    <form th:action="@{/profesor/solicitudes/guardar}" method="post" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
+    <form th:action="@{/profesor/solicitudes/guardar}" th:object="${solicitud}" method="post" enctype="multipart/form-data" class="p-4 bg-white shadow rounded">
         <div class="mb-3">
             <label class="form-label">Curso:</label>
             <select class="form-select" name="curso" required>
@@ -53,7 +53,7 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Fecha de Retiro:</label>
+            <label class="form-label">Fecha de Aplicación:</label>
             <input type="date" name="fechaImpresion" class="form-control" required>
             <h5>(la fecha no puede ser inferior a 5 días habiles a contar de hoy)</h5>
         </div>
@@ -61,6 +61,10 @@
         <div class="mb-3">
             <label class="form-label">Cantidad de Copias:</label>
             <input type="number" name="cantidadCopias" class="form-control" min="1" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ambas caras:</label>
+            <input type="checkbox" th:field="*{ambasCaras}" class="form-check-input">
         </div>
 
         <div class="mb-3">

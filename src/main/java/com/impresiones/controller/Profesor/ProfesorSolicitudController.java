@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,12 +30,13 @@ public class ProfesorSolicitudController {
     private final FuncionarioRepository funcionarioRepository;
     private final SolicitudImpresionService solicitudService;
     private final AsignaturaService asignaturaService;
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
-   private final String uploadDir = System.getProperty("user.dir") + File.separator + "Impresiones-uploads";
     public ProfesorSolicitudController(AsignaturaRepository asignaturaRepository,
-                                       FuncionarioRepository funcionarioRepository,
-                                       SolicitudImpresionService solicitudService,
-                                       AsignaturaService asignaturaService) {
+            FuncionarioRepository funcionarioRepository,
+            SolicitudImpresionService solicitudService,
+            AsignaturaService asignaturaService) {
         this.asignaturaRepository = asignaturaRepository;
         this.funcionarioRepository = funcionarioRepository;
         this.solicitudService = solicitudService;
@@ -54,7 +56,7 @@ public class ProfesorSolicitudController {
     }
 
     // Formulario nueva solicitud
-       @GetMapping("/nueva")
+    @GetMapping("/nueva")
     public String mostrarFormulario(Model model) {
         List<Asignatura> asignaturas = asignaturaRepository.findAll();
         model.addAttribute("asignatura", asignaturas);
@@ -65,14 +67,14 @@ public class ProfesorSolicitudController {
     // Guardar solicitud con archivo
     @PostMapping("/guardar")
     public String guardarSolicitud(@ModelAttribute SolicitudImpresion solicitud,
-                                  @RequestParam("archivo") MultipartFile archivo,
-                                  @RequestParam("curso") String curso,
-                                  @RequestParam("asignatura") Integer asignatura,
-                                  @RequestParam("fechaImpresion") String fechaImpresion,
-                                  @RequestParam("cantidadCopias") Integer cantidadCopias,
-                                  @AuthenticationPrincipal User user,
-                                  Model model,
-                                  RedirectAttributes redirectAttrs) throws IOException {
+            @RequestParam("archivo") MultipartFile archivo,
+            @RequestParam("curso") String curso,
+            @RequestParam("asignatura") Integer asignatura,
+            @RequestParam("fechaImpresion") String fechaImpresion,
+            @RequestParam("cantidadCopias") Integer cantidadCopias,
+            @AuthenticationPrincipal User user,
+            Model model,
+            RedirectAttributes redirectAttrs) throws IOException {
 
         // Asignar funcionario actual
         String correo = user.getUsername();
@@ -92,29 +94,43 @@ public class ProfesorSolicitudController {
         solicitud.setAsignatura(a);
         // Curso
         solicitud.setCurso(curso);
-        
+
         // Cantidad de copias
         solicitud.setCantidadCopias(cantidadCopias);
 
+
+        // Guardar archivo si existe
         // Guardar archivo si existe
         if (archivo != null && !archivo.isEmpty()) {
+            // nombre original "limpio"
             String original = StringUtils.cleanPath(archivo.getOriginalFilename());
-            String ext = original.contains(".") ? original.substring(original.lastIndexOf(".")) : "";
-            String filename = System.currentTimeMillis() + "-" + original;
-            Path targetPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-            Files.createDirectories(targetPath);
-            Path filePath = targetPath.resolve(filename);
-            Files.copy(archivo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("Archivo recibido: " + archivo.getOriginalFilename());
 
-            //Nombre Archivo
+            // extensión opcional
+            String ext = original.contains(".") ? original.substring(original.lastIndexOf(".")) : "";
+
+            // nombre único que usaremos para guardar físicamente
+            String filename = System.currentTimeMillis() + "-" + original;
+
+            // carpeta de destino (montada en Fly: /data/uploads)
+            Path targetDir = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Files.createDirectories(targetDir);
+
+            // ruta final
+            Path destino = targetDir.resolve(filename);
+
+            // copiar
+            Files.copy(archivo.getInputStream(), destino, StandardCopyOption.REPLACE_EXISTING);
+
+            // Guardar en BD:
+            // - nombre visible original (si lo usas en la UI)
             solicitud.setNombreArchivo(original);
-            //Ruta Archivo
-            solicitud.setRutaArchivo("impresiones-uploads/" + filename);
+
+            // - **solo** el nombre guardado físicamente (IMPORTANTE: no pongas rutas aquí)
+            solicitud.setRutaArchivo(filename);
         }
-        //estado
+        // estado
         solicitud.setEstado("PENDIENTE");
-        //Motivo Rechazo
+        // Motivo Rechazo
         solicitud.setMotivoRechazo("");
         solicitudService.guardar(solicitud);
         redirectAttrs.addFlashAttribute("mensaje", "✅ Solicitud creada con éxito");

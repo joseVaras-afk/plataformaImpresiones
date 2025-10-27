@@ -1,145 +1,160 @@
 package com.impresiones.controller.operador;
 
 import com.impresiones.entity.SolicitudImpresion;
+import com.impresiones.repository.SolicitudImpresionRepository;
 import com.impresiones.service.SolicitudImpresionService;
 
-import jakarta.annotation.Resource;
-import java.nio.file.Path;
-
-import com.impresiones.service.EmailService;
-import com.impresiones.repository.SolicitudImpresionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.MediaType;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 @Controller
 @RequestMapping("/operador")
 public class OperadorController {
 
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
     @Autowired
     private SolicitudImpresionService solicitudService;
+
     @Autowired
     private SolicitudImpresionRepository solicitudRepository;
 
-    // Mostrar todas las solicitudes
+    // ===== Helpers =====
+    private Path resolverRuta(String valorBD) {
+        // Acepta solo el nombre de archivo por seguridad
+        String fileName = Paths.get(valorBD).getFileName().toString();
+        return Paths.get(uploadDir).resolve(fileName).toAbsolutePath().normalize();
+    }
+
+    // ===== Vistas =====
     @GetMapping("/solicitudes")
-   public String listarSolicitudes(Model model) {
-    List<SolicitudImpresion> solicitudes = solicitudRepository.findAll();
+    public String listarSolicitudes(Model model) {
+        List<SolicitudImpresion> solicitudes = solicitudRepository.findAll();
 
-    solicitudes.sort(Comparator
-        .comparing((SolicitudImpresion s) -> !"APROBADO".equals(s.getEstado())) // Pendientes primero
-        .thenComparing(SolicitudImpresion::getFechaCreacion));
+        solicitudes.sort(
+                Comparator.comparing((SolicitudImpresion s) -> !"APROBADO".equals(s.getEstado()))
+                          .thenComparing(SolicitudImpresion::getFechaCreacion)
+        );
 
-    model.addAttribute("solicitudes", solicitudes);
-    return "operador/solicitudes";
-}
-
-@GetMapping("/operador/solicitudes/fragment")
-public String obtenerFragmentoSolicitudes(Model model) {
-    List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
-    model.addAttribute("solicitudes", solicitudes);
-    return "solicitudes :: filas"; // Thymeleaf fragment
-}
-
-@GetMapping("/operador/verArchivo/{id}")
-public ResponseEntity<Resource> verArchivo(@PathVariable Integer id) throws IOException {
-    SolicitudImpresion solicitud = solicitudRepository.findById(id).orElse(null);
-    Path pathArchivo = Paths.get(solicitud.getRutaArchivo());
-
-    if (!Files.exists(pathArchivo)) {
-        return ResponseEntity.notFound().build();
-    }
-
-    Resource recurso = (Resource) new UrlResource(pathArchivo.toUri());
-
-    return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF) // fuerza a abrir como PDF
-            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + ((FileSystemResource) recurso).getFilename() + "\"")
-            .body(recurso);
-}
-
-
-    // Cambiar estado de la solicitud
-    @PostMapping("/marcarImpreso/{id}")
-    @ResponseBody
-    public String marcarImpreso(@PathVariable int id) {
-        String estado = "IMPRESO";
-        String motivo = "";
-        boolean actualizado = solicitudService.cambiarEstado(id, estado, motivo);
-        return actualizado ? "ok" : "error";
+        model.addAttribute("solicitudes", solicitudes);
+        return "operador/solicitudes";
     }
 
 
-    // Descargar archivo
-    @GetMapping("/descargar/{id}")
-    public ResponseEntity<FileSystemResource> descargarArchivo(@PathVariable("id") int id) {
-        // 1️⃣ Buscar la solicitud en la base de datos
-        SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
-
-        if (solicitud == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // 2️⃣ Obtener la ruta del archivo guardada en la base de datos
-        String rutaArchivo = solicitud.getRutaArchivo(); // ejemplo: "C:/uploads/solicitud_12.pdf"
-        File archivo = new File(rutaArchivo);
-
-        if (!archivo.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // 3️⃣ Preparar la respuesta para que se descargue
-        FileSystemResource resource = new FileSystemResource(archivo);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + archivo.getName() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+    @GetMapping("/solicitudes/fragment")
+    public String obtenerFragmentoSolicitudes(Model model) {
+        List<SolicitudImpresion> solicitudes = solicitudService.listarTodasOrdenadas();
+        model.addAttribute("solicitudes", solicitudes);
+        return "solicitudes :: filas"; // Thymeleaf fragment
     }
-    
-    @GetMapping("/imprimir/{id}")
-    public ResponseEntity<FileSystemResource> imprimirArchivo(@PathVariable("id") int id) {
-    SolicitudImpresion solicitud = solicitudService.obtenerPorId(id).orElse(null);
-
-    if (solicitud == null) {
-        return ResponseEntity.notFound().build();
-    }
-
-    String rutaArchivo = solicitud.getRutaArchivo();
-    File archivo = new File(rutaArchivo);
-
-    if (!archivo.exists()) {
-        return ResponseEntity.notFound().build();
-    }
-
-    // Devolver el archivo con el tipo de contenido correspondiente
-    FileSystemResource resource = new FileSystemResource(archivo);
-
-    // Detectar tipo MIME (siempre PDF en este caso, puedes adaptar)
-    return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + archivo.getName() + "\"")
-            .contentType(MediaType.APPLICATION_PDF)
-            .body(resource);
-}
-
-
-
 
     @GetMapping("")
     public String panelOperador() {
         return "operador/index";
+    }
+
+    // ===== Acciones =====
+    @PostMapping("/marcarImpreso/{id}")
+    @ResponseBody
+    public String marcarImpreso(@PathVariable int id) {
+        boolean ok = solicitudService.cambiarEstado(id, "IMPRESO", "");
+        return ok ? "ok" : "error";
+    }
+
+    // ===== Archivos =====
+
+    // Ver en navegador (PDF inline)
+    @GetMapping("/verArchivo/{id}")
+    public ResponseEntity<Resource> verArchivo(@PathVariable Integer id) throws Exception {
+        SolicitudImpresion solicitud = solicitudRepository.findById(id).orElse(null);
+        if (solicitud == null || solicitud.getRutaArchivo() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Path path = resolverRuta(solicitud.getRutaArchivo());
+        if (!Files.exists(path)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource recurso = new UrlResource(path.toUri());
+        String fileName = path.getFileName().toString();
+
+        String mime = Files.probeContentType(path);
+        if (mime == null) mime = "application/pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                .contentType(MediaType.parseMediaType(mime))
+                .body(recurso);
+    }
+
+    // Descargar
+    @GetMapping("/descargar/{id}")
+    public ResponseEntity<Resource> descargarArchivo(@PathVariable("id") int id) {
+        var solicitud = solicitudService.obtenerPorId(id).orElse(null);
+        if (solicitud == null || solicitud.getRutaArchivo() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Path path = resolverRuta(solicitud.getRutaArchivo());
+        if (!Files.exists(path)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String fileName = path.getFileName().toString();
+        String mime;
+        try {
+            mime = Files.probeContentType(path);
+        } catch (Exception e) {
+            mime = null;
+        }
+        if (mime == null) mime = "application/octet-stream";
+
+        FileSystemResource resource = new FileSystemResource(path.toFile());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.parseMediaType(mime))
+                .body(resource);
+    }
+
+    // Imprimir (inline en navegador, PDF)
+    @GetMapping("/imprimir/{id}")
+    public ResponseEntity<Resource> imprimirArchivo(@PathVariable("id") int id) throws Exception {
+        var solicitud = solicitudService.obtenerPorId(id).orElse(null);
+        if (solicitud == null || solicitud.getRutaArchivo() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Path path = resolverRuta(solicitud.getRutaArchivo());
+        if (!Files.exists(path)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource recurso = new UrlResource(path.toUri());
+        String fileName = path.getFileName().toString();
+
+        String mime = Files.probeContentType(path);
+        if (mime == null) mime = "application/pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                .contentType(MediaType.parseMediaType(mime))
+                .body(recurso);
     }
 }
